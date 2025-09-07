@@ -1,0 +1,29 @@
+{
+    "@@locale": "zh",
+    "calendarAppBarTitle": "中国日历",
+    "@calendarAppBarTitle": {
+        "description": "日历页面AppBar中显示的文本"
+    },
+    "today": "今天",
+    "@today": {
+        "description": "今天日期的标签"
+    },
+    "selectDate": "选择日期",
+    "@selectDate": {
+        "description": "选择日期的指示"
+    },
+    "noDateSelected": "未选择日期",
+    "@noDateSelected": {
+        "description": "未选择日期时的消息"
+    },
+    "selectedDate": "已选择：{date}",
+    "@selectedDate": {
+        "description": "显示所选日期的消息",
+        "placeholders": {
+            "date": {
+                "type": "String",
+                "description": "所选日期"
+            }
+        }
+    }
+}

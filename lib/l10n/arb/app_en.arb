@@ -1,0 +1,29 @@
+{
+    "@@locale": "en",
+    "calendarAppBarTitle": "Chinese Calendar",
+    "@calendarAppBarTitle": {
+        "description": "Text shown in the AppBar of the Calendar Page"
+    },
+    "today": "Today",
+    "@today": {
+        "description": "Label for today's date"
+    },
+    "selectDate": "Select Date",
+    "@selectDate": {
+        "description": "Instruction to select a date"
+    },
+    "noDateSelected": "No date selected",
+    "@noDateSelected": {
+        "description": "Message when no date is selected"
+    },
+    "selectedDate": "Selected: {date}",
+    "@selectedDate": {
+        "description": "Message showing the selected date",
+        "placeholders": {
+            "date": {
+                "type": "String",
+                "description": "The selected date"
+            }
+        }
+    }
+}
