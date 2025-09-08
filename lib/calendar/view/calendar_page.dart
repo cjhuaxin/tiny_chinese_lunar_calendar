@@ -1,3 +1,4 @@
+import 'package:ccalendar/calendar/utils/lunar_calendar.dart';
 import 'package:ccalendar/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -30,6 +31,56 @@ class CalendarView extends StatefulWidget {
 class _CalendarViewState extends State<CalendarView> {
   DateTime? _selectedDay;
   DateTime _focusedDay = kToday;
+
+  /// 构建日期单元格，同时显示公历和农历日期
+  Widget _buildDateCell(DateTime day, bool isSelected, bool isToday) {
+    final lunarDate = LunarCalendar.solarToLunar(day);
+
+    Color? backgroundColor;
+    Color? textColor;
+
+    if (isSelected) {
+      backgroundColor = Theme.of(context).primaryColor;
+      textColor = Colors.white;
+    } else if (isToday) {
+      backgroundColor = Theme.of(context).primaryColor.withValues(alpha: 0.1);
+      textColor = Theme.of(context).primaryColor;
+    }
+
+    return Container(
+      margin: const EdgeInsets.all(2),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(8),
+        border: isToday && !isSelected
+            ? Border.all(color: Theme.of(context).primaryColor)
+            : null,
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // 公历日期
+          Text(
+            '${day.day}',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: textColor,
+            ),
+          ),
+          // 农历日期
+          Text(
+            lunarDate.dayText,
+            style: TextStyle(
+              fontSize: 10,
+              color: textColor ?? Colors.grey[600],
+              height: 1,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -114,6 +165,15 @@ class _CalendarViewState extends State<CalendarView> {
                           ),
                         ),
                       );
+                    },
+                    defaultBuilder: (context, day, focusedDay) {
+                      return _buildDateCell(day, false, false);
+                    },
+                    selectedBuilder: (context, day, focusedDay) {
+                      return _buildDateCell(day, true, false);
+                    },
+                    todayBuilder: (context, day, focusedDay) {
+                      return _buildDateCell(day, false, true);
                     },
                   ),
                   selectedDayPredicate: (day) {
