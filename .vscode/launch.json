@@ -5,33 +5,46 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Launch development",
+      "name": "Launch development (macOS)",
       "request": "launch",
       "type": "dart",
       "program": "lib/main_development.dart",
-      "args": [
-        "--flavor",
-        "development",
-        "--target",
-        "lib/main_development.dart"
-      ],
       "deviceId": "macos"
     },
     {
-      "name": "Launch staging",
+      "name": "Launch staging (macOS)",
       "request": "launch",
       "type": "dart",
       "program": "lib/main_staging.dart",
-      "args": ["--flavor", "staging", "--target", "lib/main_staging.dart"],
       "deviceId": "macos"
     },
     {
-      "name": "Launch production",
+      "name": "Launch production (macOS)",
       "request": "launch",
       "type": "dart",
       "program": "lib/main_production.dart",
-      "args": ["--flavor", "production", "--target", "lib/main_production.dart"],
       "deviceId": "macos"
+    },
+    {
+      "name": "Launch development (iOS)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main_development.dart",
+      "args": ["--flavor", "development"]
+    },
+    {
+      "name": "Launch staging (iOS)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main_staging.dart",
+      "args": ["--flavor", "staging"]
+    },
+    {
+      "name": "Launch production (iOS)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main_production.dart",
+      "args": ["--flavor", "production"]
     }
   ]
 }

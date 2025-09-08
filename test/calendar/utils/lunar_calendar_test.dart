@@ -1,4 +1,4 @@
-import 'package:ccalendar/calendar/utils/lunar_calendar.dart';
+import 'package:tiny_chinese_lunar_calendar/calendar/utils/lunar_calendar.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -7,13 +7,13 @@ void main() {
       // 测试2025年1月1日
       final solarDate = DateTime(2025, 1, 1);
       final lunarDate = LunarCalendar.solarToLunar(solarDate);
-      
+
       // 验证返回的农历日期不为空
       expect(lunarDate, isNotNull);
       expect(lunarDate.year, greaterThan(0));
       expect(lunarDate.month, greaterThan(0));
       expect(lunarDate.day, greaterThan(0));
-      
+
       // 验证农历日期在合理范围内
       expect(lunarDate.month, lessThanOrEqualTo(12));
       expect(lunarDate.day, lessThanOrEqualTo(30));
@@ -53,7 +53,7 @@ void main() {
         month: 1,
         day: 2,
       );
-      
+
       expect(lunarDate.dayText, equals('初二'));
       expect(lunarDate.fullText, equals('正月初二'));
       expect(lunarDate.yearText, contains('蛇年'));
@@ -65,7 +65,7 @@ void main() {
         DateTime(2025, 6, 15),
         DateTime(2025, 12, 31),
       ];
-      
+
       for (final date in testDates) {
         final lunarDate = LunarCalendar.solarToLunar(date);
         expect(lunarDate.dayText, isNotEmpty);

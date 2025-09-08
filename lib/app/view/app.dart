@@ -1,6 +1,6 @@
-import 'package:ccalendar/calendar/calendar.dart';
-import 'package:ccalendar/l10n/l10n.dart';
 import 'package:flutter/material.dart';
+import 'package:tiny_chinese_lunar_calendar/calendar/calendar.dart';
+import 'package:tiny_chinese_lunar_calendar/l10n/gen/app_localizations.dart';
 
 class App extends StatefulWidget {
   const App({super.key});

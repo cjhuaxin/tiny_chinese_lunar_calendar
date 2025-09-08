@@ -1,5 +1,5 @@
-import 'package:ccalendar/calendar/utils/lunar_calendar.dart';
-import 'package:ccalendar/l10n/l10n.dart';
+import 'package:tiny_chinese_lunar_calendar/calendar/utils/lunar_calendar.dart';
+import 'package:tiny_chinese_lunar_calendar/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -99,22 +99,6 @@ class _CalendarViewState extends State<CalendarView> {
               });
             },
             tooltip: l10n.today,
-          ),
-          PopupMenuButton<Locale>(
-            icon: const Icon(Icons.language),
-            onSelected: (Locale locale) {
-              widget.onLanguageChanged?.call(locale);
-            },
-            itemBuilder: (BuildContext context) => [
-              const PopupMenuItem<Locale>(
-                value: Locale('en'),
-                child: Text('English'),
-              ),
-              const PopupMenuItem<Locale>(
-                value: Locale('zh'),
-                child: Text('中文'),
-              ),
-            ],
           ),
         ],
       ),
