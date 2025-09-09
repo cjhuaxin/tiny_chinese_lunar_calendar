@@ -188,6 +188,14 @@ Win32Window::MessageHandler(HWND hwnd,
         SetFocus(child_content_);
       }
       return 0;
+
+    case WM_GETMINMAXINFO: {
+      // 设置最小窗口尺寸，确保万年历界面能够正常显示
+      MINMAXINFO* minMaxInfo = reinterpret_cast<MINMAXINFO*>(lparam);
+      minMaxInfo->ptMinTrackSize.x = 500;  // 最小宽度
+      minMaxInfo->ptMinTrackSize.y = 400;  // 最小高度
+      return 0;
+    }
   }
 
   return DefWindowProc(window_handle_, message, wparam, lparam);
