@@ -70,8 +70,8 @@ class LunarCalendar {
     
     // 简化计算：这里使用一个近似的方法
     // 实际应用中应该使用更精确的农历算法
-    int lunarYear = 1900;
-    int remainingDays = daysDiff;
+    var lunarYear = 1900;
+    var remainingDays = daysDiff;
     
     // 计算农历年份
     while (remainingDays > 0) {
@@ -82,7 +82,7 @@ class LunarCalendar {
     }
     
     // 计算农历月份和日期
-    int lunarMonth = 1;
+    var lunarMonth = 1;
     while (remainingDays > 0) {
       final monthDays = _getLunarMonthDays(lunarYear, lunarMonth);
       if (remainingDays < monthDays) break;
@@ -96,7 +96,6 @@ class LunarCalendar {
       year: lunarYear,
       month: lunarMonth,
       day: lunarDay,
-      isLeapMonth: false, // 简化实现，不处理闰月
     );
   }
 
@@ -105,10 +104,10 @@ class LunarCalendar {
     if (year < 1900 || year > 2100) return 354; // 默认值
     
     final info = _lunarInfo[year - 1900];
-    int days = 0;
+    var days = 0;
     
     // 计算12个月的天数
-    for (int i = 0x8000; i > 0x8; i >>= 1) {
+    for (var i = 0x8000; i > 0x8; i >>= 1) {
       days += (info & i) != 0 ? 30 : 29;
     }
     
@@ -168,10 +167,6 @@ class LunarCalendar {
 
 /// 农历日期数据类
 class LunarDate {
-  final int year;
-  final int month;
-  final int day;
-  final bool isLeapMonth;
 
   const LunarDate({
     required this.year,
@@ -179,6 +174,10 @@ class LunarDate {
     required this.day,
     this.isLeapMonth = false,
   });
+  final int year;
+  final int month;
+  final int day;
+  final bool isLeapMonth;
 
   /// 获取农历日期的中文表示（只显示日）
   String get dayText => LunarCalendar.formatLunarDay(day);

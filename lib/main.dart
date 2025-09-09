@@ -1,20 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:tiny_chinese_lunar_calendar/app/app.dart';
+import 'package:tiny_chinese_lunar_calendar/bootstrap.dart';
 
 void main() {
-  runApp(const MainApp());
-}
-
-class MainApp extends StatelessWidget {
-  const MainApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: Text('Hello World!'),
-        ),
-      ),
-    );
-  }
+  bootstrap(() => const App());
 }

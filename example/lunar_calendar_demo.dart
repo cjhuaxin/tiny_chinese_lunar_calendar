@@ -5,10 +5,10 @@ void main() {
 
   // 测试一些重要日期
   final testDates = [
-    DateTime(2025, 1, 1), // 元旦
+    DateTime(2025, 1), // 元旦
     DateTime(2025, 1, 29), // 可能的春节
-    DateTime(2025, 6, 1), // 儿童节
-    DateTime(2025, 10, 1), // 国庆节
+    DateTime(2025, 6), // 儿童节
+    DateTime(2025, 10), // 国庆节
     DateTime(2025, 12, 25), // 圣诞节
   ];
 
@@ -22,14 +22,14 @@ void main() {
   }
 
   print('\n=== 农历日期格式化测试 ===');
-  for (int i = 1; i <= 30; i++) {
+  for (var i = 1; i <= 30; i++) {
     if (i <= 10 || i % 5 == 0 || i > 25) {
-      print('农历${i}日: ${LunarCalendar.formatLunarDay(i)}');
+      print('农历$i日: ${LunarCalendar.formatLunarDay(i)}');
     }
   }
 
   print('\n=== 农历月份格式化测试 ===');
-  for (int i = 1; i <= 12; i++) {
-    print('农历${i}月: ${LunarCalendar.formatLunarMonth(i)}');
+  for (var i = 1; i <= 12; i++) {
+    print('农历$i月: ${LunarCalendar.formatLunarMonth(i)}');
   }
 }

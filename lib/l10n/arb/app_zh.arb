@@ -1,6 +1,6 @@
 {
     "@@locale": "zh",
-    "calendarAppBarTitle": "中国日历",
+    "calendarAppBarTitle": "小小万年历",
     "@calendarAppBarTitle": {
         "description": "日历页面AppBar中显示的文本"
     },

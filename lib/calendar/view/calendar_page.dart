@@ -38,46 +38,84 @@ class _CalendarViewState extends State<CalendarView> {
 
     Color? backgroundColor;
     Color? textColor;
+    EdgeInsets margin;
+    EdgeInsets padding;
+    double borderRadius;
+    List<BoxShadow>? boxShadow;
 
     if (isSelected) {
       backgroundColor = Theme.of(context).primaryColor;
       textColor = Colors.white;
+      // No margin at all for maximum width, create square-like effect
+      margin = EdgeInsets.zero;
+      padding = const EdgeInsets.symmetric(horizontal: 12, vertical: 12);
+      borderRadius = 20;
+      // Add subtle shadow for better visual hierarchy
+      boxShadow = [
+        BoxShadow(
+          color: Theme.of(context).primaryColor.withValues(alpha: 0.4),
+          blurRadius: 6,
+          offset: const Offset(0, 3),
+        ),
+      ];
     } else if (isToday) {
-      backgroundColor = Theme.of(context).primaryColor.withValues(alpha: 0.1);
+      backgroundColor = Theme.of(context).primaryColor.withValues(alpha: 0.15);
       textColor = Theme.of(context).primaryColor;
+      // Same margin and border radius as selected for consistency
+      margin = EdgeInsets.zero;
+      padding = const EdgeInsets.symmetric(horizontal: 12, vertical: 12);
+      borderRadius = 20;
+      boxShadow = null;
+    } else {
+      backgroundColor = null;
+      textColor = null;
+      margin = EdgeInsets.zero;
+      padding = const EdgeInsets.symmetric(horizontal: 12, vertical: 12);
+      borderRadius = 20;
+      boxShadow = null;
     }
 
     return Container(
-      margin: const EdgeInsets.all(2),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(8),
-        border: isToday && !isSelected
-            ? Border.all(color: Theme.of(context).primaryColor)
-            : null,
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // 公历日期
-          Text(
-            '${day.day}',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: textColor,
-            ),
+      margin: margin,
+      child: AspectRatio(
+        aspectRatio: 0.95, // Force square aspect ratio
+        child: Container(
+          padding: padding,
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            borderRadius: BorderRadius.circular(borderRadius),
+            border: isToday && !isSelected
+                ? Border.all(
+                    color: Theme.of(context).primaryColor,
+                    width: 1.5,
+                  )
+                : null,
+            boxShadow: boxShadow,
           ),
-          // 农历日期
-          Text(
-            lunarDate.dayText,
-            style: TextStyle(
-              fontSize: 10,
-              color: textColor ?? Colors.grey[600],
-              height: 1,
-            ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // 公历日期
+              Text(
+                '${day.day}',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: textColor,
+                ),
+              ),
+              // 农历日期
+              Text(
+                lunarDate.dayText,
+                style: TextStyle(
+                  fontSize: 10,
+                  color: textColor ?? Colors.grey[600],
+                  height: 1,
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -132,7 +170,25 @@ class _CalendarViewState extends State<CalendarView> {
                     formatButtonVisible: false,
                     titleCentered: true,
                   ),
-
+                  calendarStyle: CalendarStyle(
+                    // Minimize cell margin for wider highlights
+                    cellMargin: EdgeInsets.zero,
+                    // Style for outside days (previous/next month)
+                    outsideTextStyle: TextStyle(
+                      color: Colors.grey[400],
+                      fontSize: 16,
+                    ),
+                    // Weekend styling
+                    weekendTextStyle: const TextStyle(
+                      color: Colors.red,
+                      fontSize: 16,
+                    ),
+                    // Default text style
+                    defaultTextStyle: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                   startingDayOfWeek: StartingDayOfWeek.monday,
                   calendarBuilders: CalendarBuilders(
                     headerTitleBuilder: (context, day) {

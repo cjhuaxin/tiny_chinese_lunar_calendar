@@ -1,6 +1,6 @@
 {
     "@@locale": "en",
-    "calendarAppBarTitle": "Chinese Calendar",
+    "calendarAppBarTitle": "Tiny Chinese Lunar Calendar",
     "@calendarAppBarTitle": {
         "description": "Text shown in the AppBar of the Calendar Page"
     },
