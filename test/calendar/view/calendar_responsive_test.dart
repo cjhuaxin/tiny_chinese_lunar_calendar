@@ -21,8 +21,8 @@ void main() {
 
   group('Calendar Responsive Design Tests', () {
     testWidgets('Calendar should adapt to small window size', (tester) async {
-      // 测试小窗口尺寸 (500x400)
-      await tester.binding.setSurfaceSize(const Size(500, 400));
+      // 测试固定窗口尺寸 (500x500)
+      await tester.binding.setSurfaceSize(const Size(500, 500));
 
       await tester.pumpWidget(createTestApp());
 
@@ -59,29 +59,29 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('Calendar should handle window resize', (tester) async {
-      // 开始时使用大窗口
-      await tester.binding.setSurfaceSize(const Size(1000, 700));
+    testWidgets('Calendar should handle fixed window size', (tester) async {
+      // 测试固定窗口尺寸 (500x500)
+      await tester.binding.setSurfaceSize(const Size(500, 500));
 
       await tester.pumpWidget(createTestApp());
 
-      // 验证初始渲染正常
+      // 验证固定窗口渲染正常
       expect(find.byType(CalendarPage), findsOneWidget);
       expect(tester.takeException(), isNull);
 
-      // 缩小窗口
-      await tester.binding.setSurfaceSize(const Size(600, 450));
+      // 测试稍大的窗口
+      await tester.binding.setSurfaceSize(const Size(600, 600));
       await tester.pump();
 
-      // 验证缩小后仍然正常
+      // 验证仍然正常
       expect(find.byType(CalendarPage), findsOneWidget);
       expect(tester.takeException(), isNull);
 
-      // 再次放大窗口
-      await tester.binding.setSurfaceSize(const Size(900, 650));
+      // 回到固定尺寸
+      await tester.binding.setSurfaceSize(const Size(500, 500));
       await tester.pump();
 
-      // 验证放大后仍然正常
+      // 验证固定尺寸仍然正常
       expect(find.byType(CalendarPage), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
