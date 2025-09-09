@@ -1,8 +1,8 @@
-import 'package:tiny_chinese_lunar_calendar/calendar/utils/lunar_calendar.dart';
-import 'package:tiny_chinese_lunar_calendar/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:tiny_chinese_lunar_calendar/calendar/utils/lunar_calendar.dart';
+import 'package:tiny_chinese_lunar_calendar/l10n/l10n.dart';
 
 class CalendarPage extends StatelessWidget {
   const CalendarPage({super.key, this.onLanguageChanged});
@@ -109,7 +109,11 @@ class _CalendarViewState extends State<CalendarView> {
                 lunarDate.dayText,
                 style: TextStyle(
                   fontSize: 10,
-                  color: textColor ?? Colors.grey[600],
+                  color:
+                      textColor ??
+                      Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.6),
                   height: 1,
                 ),
               ),
@@ -178,15 +182,18 @@ class _CalendarViewState extends State<CalendarView> {
                       color: Colors.grey[400],
                       fontSize: 16,
                     ),
-                    // Weekend styling
-                    weekendTextStyle: const TextStyle(
-                      color: Colors.red,
+                    // Weekend styling - 使用更柔和的红色
+                    weekendTextStyle: TextStyle(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: 0.8),
                       fontSize: 16,
                     ),
                     // Default text style
-                    defaultTextStyle: const TextStyle(
+                    defaultTextStyle: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   startingDayOfWeek: StartingDayOfWeek.monday,
@@ -199,9 +206,10 @@ class _CalendarViewState extends State<CalendarView> {
                         child: Text(
                           formatter.format(day),
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.primary,
                           ),
                         ),
                       );

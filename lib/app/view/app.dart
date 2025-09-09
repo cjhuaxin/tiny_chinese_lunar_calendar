@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tiny_chinese_lunar_calendar/app/theme/app_theme.dart';
 import 'package:tiny_chinese_lunar_calendar/calendar/calendar.dart';
 import 'package:tiny_chinese_lunar_calendar/l10n/gen/app_localizations.dart';
 
@@ -21,12 +22,8 @@ class _AppState extends State<App> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      theme: ThemeData(
-        appBarTheme: AppBarTheme(
-          backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        ),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
       locale: _locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
