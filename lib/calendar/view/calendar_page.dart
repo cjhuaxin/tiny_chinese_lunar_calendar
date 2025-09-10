@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:lunar/lunar.dart';
 import 'package:table_calendar/table_calendar.dart';
-import 'package:tiny_chinese_lunar_calendar/calendar/utils/lunar_calendar.dart';
 import 'package:tiny_chinese_lunar_calendar/l10n/l10n.dart';
 
 class CalendarPage extends StatelessWidget {
@@ -39,7 +39,7 @@ class _CalendarViewState extends State<CalendarView> {
     bool isToday,
     double cellSize,
   ) {
-    final lunarDate = LunarCalendar.solarToLunar(day);
+    final lunarDate = Lunar.fromDate(day);
 
     Color? backgroundColor;
     Color? textColor;
@@ -97,7 +97,7 @@ class _CalendarViewState extends State<CalendarView> {
               // 农历日期 - 只在单元格足够大时显示
               if (showLunarText)
                 Text(
-                  lunarDate.dayText,
+                  lunarDate.getDayInChinese(),
                   style: TextStyle(
                     fontSize: secondaryFontSize,
                     color: textColor?.withValues(alpha: 0.7), // 农历文字更淡一些
@@ -118,7 +118,7 @@ class _CalendarViewState extends State<CalendarView> {
     bool isToday,
     double cellSize,
   ) {
-    final lunarDate = LunarCalendar.solarToLunar(day);
+    final lunarDate = Lunar.fromDate(day);
 
     Color? backgroundColor;
     Color? textColor;
@@ -211,7 +211,7 @@ class _CalendarViewState extends State<CalendarView> {
               // 农历日期 - 只在单元格足够大时显示
               if (showLunarText)
                 Text(
-                  lunarDate.dayText,
+                  lunarDate.getDayInChinese(),
                   style: TextStyle(
                     fontSize: secondaryFontSize,
                     color:
