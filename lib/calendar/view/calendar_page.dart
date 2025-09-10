@@ -37,8 +37,9 @@ class _CalendarViewState extends State<CalendarView> {
     DateTime day,
     bool isSelected,
     bool isToday,
-    double cellSize,
-  ) {
+    double cellSize, {
+    double? availableRowHeight,
+  }) {
     final lunarDate = Lunar.fromDate(day);
 
     Color? backgroundColor;
@@ -63,50 +64,74 @@ class _CalendarViewState extends State<CalendarView> {
     borderRadius = dynamicBorderRadius;
     boxShadow = null;
 
-    // 根据单元格大小动态计算字体大小，与当月日期保持一致
-    final primaryFontSize = (cellSize * 0.25).clamp(8.0, 16.0);
-    final secondaryFontSize = (cellSize * 0.15).clamp(6.0, 10.0);
+    // 根据单元格大小和可用行高动态计算字体大小，与当月日期保持一致
+    // 使用更保守的缩放以防止溢出
+    final basePrimaryFontSize = (cellSize * 0.18).clamp(6.0, 12.0);
+    final baseSecondaryFontSize = (cellSize * 0.10).clamp(4.0, 8.0);
 
-    // 在极小的单元格中隐藏农历文本
-    final showLunarText = cellSize > 30;
+    // 如果有可用行高信息，进一步限制字体大小
+    final primaryFontSize = availableRowHeight != null
+        ? basePrimaryFontSize.clamp(
+            6.0,
+            (availableRowHeight * 0.30).clamp(6.0, 12.0),
+          )
+        : basePrimaryFontSize;
+    final secondaryFontSize = availableRowHeight != null
+        ? baseSecondaryFontSize.clamp(
+            4.0,
+            (availableRowHeight * 0.18).clamp(4.0, 8.0),
+          )
+        : baseSecondaryFontSize;
+
+    // 在极小的单元格或行高中隐藏农历文本
+    // 增加更严格的条件以防止在极端约束下溢出
+    final showLunarText =
+        cellSize > 30 &&
+        (availableRowHeight == null || availableRowHeight > 24) &&
+        primaryFontSize >= 8.0; // 确保主字体足够大时才显示农历
 
     return Container(
       margin: margin,
-      child: AspectRatio(
-        aspectRatio: 0.95, // Force square aspect ratio
-        child: Container(
-          padding: padding,
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            borderRadius: BorderRadius.circular(borderRadius),
-            boxShadow: boxShadow,
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 公历日期
-              Text(
-                '${day.day}',
-                style: TextStyle(
-                  fontSize: primaryFontSize,
-                  fontWeight: FontWeight.w500,
-                  color: textColor,
-                ),
-              ),
-              // 农历日期 - 只在单元格足够大时显示
-              if (showLunarText)
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Use available space more flexibly, don't force aspect ratio
+          // if it causes overflow
+          return Container(
+            width: constraints.maxWidth,
+            height: constraints.maxHeight,
+            padding: padding,
+            decoration: BoxDecoration(
+              color: backgroundColor,
+              borderRadius: BorderRadius.circular(borderRadius),
+              boxShadow: boxShadow,
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 公历日期
                 Text(
-                  lunarDate.getDayInChinese(),
+                  '${day.day}',
                   style: TextStyle(
-                    fontSize: secondaryFontSize,
-                    color: textColor?.withValues(alpha: 0.7), // 农历文字更淡一些
-                    height: 1,
+                    fontSize: primaryFontSize,
+                    fontWeight: FontWeight.w500,
+                    color: textColor,
                   ),
                 ),
-            ],
-          ),
-        ),
+                // 农历日期 - 只在单元格足够大时显示
+                if (showLunarText)
+                  Text(
+                    lunarDate.getDayInChinese(),
+                    style: TextStyle(
+                      fontSize: secondaryFontSize,
+                      color: textColor?.withValues(alpha: 0.7), // 农历文字更淡一些
+                      height: 1,
+                    ),
+                  ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -116,8 +141,9 @@ class _CalendarViewState extends State<CalendarView> {
     DateTime day,
     bool isSelected,
     bool isToday,
-    double cellSize,
-  ) {
+    double cellSize, {
+    double? availableRowHeight,
+  }) {
     final lunarDate = Lunar.fromDate(day);
 
     Color? backgroundColor;
@@ -171,62 +197,109 @@ class _CalendarViewState extends State<CalendarView> {
       boxShadow = null;
     }
 
-    // 根据单元格大小动态计算字体大小，更激进的缩放
-    final primaryFontSize = (cellSize * 0.25).clamp(8.0, 16.0);
-    final secondaryFontSize = (cellSize * 0.15).clamp(6.0, 10.0);
+    // 根据单元格大小和可用行高动态计算字体大小
+    // 使用更保守的缩放以防止溢出
+    final basePrimaryFontSize = (cellSize * 0.18).clamp(6.0, 12.0);
+    final baseSecondaryFontSize = (cellSize * 0.10).clamp(4.0, 8.0);
 
-    // 在极小的单元格中隐藏农历文本
-    final showLunarText = cellSize > 30;
+    // 如果有可用行高信息，进一步限制字体大小
+    final primaryFontSize = availableRowHeight != null
+        ? basePrimaryFontSize.clamp(
+            6.0,
+            (availableRowHeight * 0.30).clamp(6.0, 12.0),
+          )
+        : basePrimaryFontSize;
+    final secondaryFontSize = availableRowHeight != null
+        ? baseSecondaryFontSize.clamp(
+            4.0,
+            (availableRowHeight * 0.18).clamp(4.0, 8.0),
+          )
+        : baseSecondaryFontSize;
+
+    // 在极小的单元格或行高中隐藏农历文本
+    // 增加更严格的条件以防止在极端约束下溢出
+    final showLunarText =
+        cellSize > 30 &&
+        (availableRowHeight == null || availableRowHeight > 24) &&
+        primaryFontSize >= 8.0; // 确保主字体足够大时才显示农历
 
     return Container(
       margin: margin,
-      child: AspectRatio(
-        aspectRatio: 0.95, // Force square aspect ratio
-        child: Container(
-          padding: padding,
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            borderRadius: BorderRadius.circular(borderRadius),
-            border: isToday && !isSelected
-                ? Border.all(
-                    color: Theme.of(context).primaryColor,
-                    width: 1.5,
-                  )
-                : null,
-            boxShadow: boxShadow,
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 公历日期
-              Text(
-                '${day.day}',
-                style: TextStyle(
-                  fontSize: primaryFontSize,
-                  fontWeight: FontWeight.w500,
-                  color: textColor,
-                ),
-              ),
-              // 农历日期 - 只在单元格足够大时显示
-              if (showLunarText)
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Use available space more flexibly, don't force aspect ratio
+          // if it causes overflow
+          return Container(
+            width: constraints.maxWidth,
+            height: constraints.maxHeight,
+            padding: padding,
+            decoration: BoxDecoration(
+              color: backgroundColor,
+              borderRadius: BorderRadius.circular(borderRadius),
+              border: isToday && !isSelected
+                  ? Border.all(
+                      color: Theme.of(context).primaryColor,
+                      width: 1.5,
+                    )
+                  : null,
+              boxShadow: boxShadow,
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 公历日期
                 Text(
-                  lunarDate.getDayInChinese(),
+                  '${day.day}',
                   style: TextStyle(
-                    fontSize: secondaryFontSize,
-                    color:
-                        textColor ??
-                        Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withValues(alpha: 0.6),
-                    height: 1,
+                    fontSize: primaryFontSize,
+                    fontWeight: FontWeight.w500,
+                    color: textColor,
                   ),
                 ),
-            ],
-          ),
-        ),
+                // 农历日期 - 只在单元格足够大时显示
+                if (showLunarText)
+                  Text(
+                    lunarDate.getDayInChinese(),
+                    style: TextStyle(
+                      fontSize: secondaryFontSize,
+                      color:
+                          textColor ??
+                          Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.6),
+                      height: 1,
+                    ),
+                  ),
+              ],
+            ),
+          );
+        },
       ),
     );
+  }
+
+  /// 计算指定月份需要多少行来显示
+  /// 返回值为5或6，表示该月份在日历中需要的行数
+  int _calculateRowsNeededForMonth(DateTime focusedDay) {
+    // 获取当月第一天
+    final firstDayOfMonth = DateTime(focusedDay.year, focusedDay.month);
+    // 获取当月最后一天
+    final lastDayOfMonth = DateTime(focusedDay.year, focusedDay.month + 1, 0);
+
+    // 计算第一天是星期几（0=周一, 6=周日）
+    final firstDayWeekday = (firstDayOfMonth.weekday - 1) % 7;
+
+    // 计算当月总天数
+    final daysInMonth = lastDayOfMonth.day;
+
+    // 计算需要的总格子数：前面填充的天数 + 当月天数
+    final totalCells = firstDayWeekday + daysInMonth;
+
+    // 计算需要的行数（每行7天）
+    final rowsNeeded = (totalCells / 7).ceil();
+
+    return rowsNeeded;
   }
 
   /// 判断是否应该显示非当月日期
@@ -299,16 +372,41 @@ class _CalendarViewState extends State<CalendarView> {
 
                 // 为500x500固定窗口优化的尺寸参数，同时保持响应性
                 final baseFontSize = (availableWidth / 50).clamp(9.0, 14.0);
-                final daysOfWeekHeight = (baseFontSize * 1.8).clamp(18.0, 28.0);
-                final headerPadding = (availableHeight * 0.02).clamp(
-                  10.0,
-                  20.0,
+
+                // 计算当前月份需要的行数以调整其他参数
+                final rowsNeeded = _calculateRowsNeededForMonth(_focusedDay);
+
+                // 根据行数需求调整间距参数
+                final daysOfWeekHeight = (baseFontSize * 1.5).clamp(
+                  rowsNeeded == 6 ? 10.0 : 12.0, // 6行月份使用更小的星期标题高度
+                  24.0,
+                );
+                final headerPadding = (availableHeight * 0.015).clamp(
+                  rowsNeeded == 6 ? 2.0 : 4.0, // 6行月份使用更小的头部内边距
+                  16.0,
                 );
                 final remainingHeight =
                     availableHeight - daysOfWeekHeight - headerPadding;
 
-                // 6行日期，动态计算行高以避免溢出，更紧凑的布局
-                final rowHeight = (remainingHeight / 6).clamp(30.0, 55.0);
+                // 根据实际需要的行数动态调整行高
+                // 计算最小内容高度需求
+                final minContentHeight = baseFontSize * 2.2; // 主文字 + 农历文字 + 间距
+                const minCellPadding = 3.0; // 最小内边距
+                final minRowHeight = minContentHeight + minCellPadding * 2;
+
+                // 为6行月份预留更紧凑的间距，为5行月份提供更宽松的间距
+                final double rowHeight;
+                if (rowsNeeded == 6) {
+                  // 6行月份：确保有足够空间显示内容，但保持紧凑
+                  // 使用更保守的计算，留出更多缓冲空间防止溢出
+                  final idealHeight = remainingHeight / 8.0; // 更大的除数，更多缓冲空间
+                  rowHeight = idealHeight.clamp(minRowHeight, 42.0);
+                } else {
+                  // 5行月份：使用更宽松的布局，减少底部空白
+                  // 计算可用空间并平均分配给5行
+                  final idealHeight = remainingHeight / 6.2; // 留出一些缓冲空间
+                  rowHeight = idealHeight.clamp(minRowHeight, 62.0);
+                }
 
                 // 计算单元格大小用于动态样式
                 final cellSize = (availableWidth / 7).clamp(50.0, 80.0);
@@ -356,7 +454,9 @@ class _CalendarViewState extends State<CalendarView> {
                         22.0,
                       );
                       return Container(
-                        padding: EdgeInsets.all(baseFontSize * 0.3),
+                        padding: EdgeInsets.all(
+                          (baseFontSize * 0.15).clamp(1.0, 4.0),
+                        ), // 更激进地减少年月标题的内边距
                         child: Text(
                           formatter.format(day),
                           textAlign: TextAlign.center,
@@ -369,13 +469,31 @@ class _CalendarViewState extends State<CalendarView> {
                       );
                     },
                     defaultBuilder: (context, day, focusedDay) {
-                      return _buildDateCell(day, false, false, cellSize);
+                      return _buildDateCell(
+                        day,
+                        false,
+                        false,
+                        cellSize,
+                        availableRowHeight: rowHeight,
+                      );
                     },
                     selectedBuilder: (context, day, focusedDay) {
-                      return _buildDateCell(day, true, false, cellSize);
+                      return _buildDateCell(
+                        day,
+                        true,
+                        false,
+                        cellSize,
+                        availableRowHeight: rowHeight,
+                      );
                     },
                     todayBuilder: (context, day, focusedDay) {
-                      return _buildDateCell(day, false, true, cellSize);
+                      return _buildDateCell(
+                        day,
+                        false,
+                        true,
+                        cellSize,
+                        availableRowHeight: rowHeight,
+                      );
                     },
                     // 添加 outsideBuilder 确保非当月日期也使用相同的自定义样式
                     outsideBuilder: (context, day, focusedDay) {
@@ -386,6 +504,7 @@ class _CalendarViewState extends State<CalendarView> {
                           false,
                           false,
                           cellSize,
+                          availableRowHeight: rowHeight,
                         );
                       }
                       // 不显示其他非当月日期
@@ -402,7 +521,9 @@ class _CalendarViewState extends State<CalendarView> {
                     });
                   },
                   onPageChanged: (focusedDay) {
-                    _focusedDay = focusedDay;
+                    setState(() {
+                      _focusedDay = focusedDay;
+                    });
                   },
                 );
               },

@@ -36,9 +36,10 @@ class AppTheme {
         foregroundColor: Colors.white,
         elevation: 2,
         centerTitle: true,
+        toolbarHeight: 48, // 减少AppBar高度，默认是56
         titleTextStyle: TextStyle(
           color: Colors.white,
-          fontSize: 20,
+          fontSize: 18, // 稍微减少字体大小
           fontWeight: FontWeight.w600,
         ),
         iconTheme: IconThemeData(
