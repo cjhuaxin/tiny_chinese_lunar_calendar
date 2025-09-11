@@ -20,9 +20,14 @@ final kFirstDay = DateTime(kToday.year - 100);
 final kLastDay = DateTime(kToday.year + 100, 12, 31);
 
 class CalendarView extends StatefulWidget {
-  const CalendarView({super.key, this.onLanguageChanged});
+  const CalendarView({
+    super.key,
+    this.onLanguageChanged,
+    this.initialFocusedDay,
+  });
 
   final void Function(Locale)? onLanguageChanged;
+  final DateTime? initialFocusedDay;
 
   @override
   State<CalendarView> createState() => _CalendarViewState();
@@ -30,7 +35,13 @@ class CalendarView extends StatefulWidget {
 
 class _CalendarViewState extends State<CalendarView> {
   DateTime? _selectedDay;
-  DateTime _focusedDay = kToday;
+  late DateTime _focusedDay;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusedDay = widget.initialFocusedDay ?? kToday;
+  }
 
   /// 构建非当月日期单元格，同时显示公历和农历日期
   Widget _buildOutsideDateCell(
@@ -65,29 +76,29 @@ class _CalendarViewState extends State<CalendarView> {
     boxShadow = null;
 
     // 根据单元格大小和可用行高动态计算字体大小，与当月日期保持一致
-    // 使用更保守的缩放以防止溢出
-    final basePrimaryFontSize = (cellSize * 0.18).clamp(6.0, 12.0);
-    final baseSecondaryFontSize = (cellSize * 0.10).clamp(4.0, 8.0);
+    // 增大字体大小，提升可读性
+    final basePrimaryFontSize = (cellSize * 0.22).clamp(8.0, 15.0);
+    final baseSecondaryFontSize = (cellSize * 0.12).clamp(6.0, 10.0);
 
     // 如果有可用行高信息，进一步限制字体大小
     final primaryFontSize = availableRowHeight != null
         ? basePrimaryFontSize.clamp(
-            6.0,
-            (availableRowHeight * 0.30).clamp(6.0, 12.0),
+            8.0,
+            (availableRowHeight * 0.35).clamp(8.0, 15.0),
           )
         : basePrimaryFontSize;
     final secondaryFontSize = availableRowHeight != null
         ? baseSecondaryFontSize.clamp(
-            4.0,
-            (availableRowHeight * 0.18).clamp(4.0, 8.0),
+            6.0,
+            (availableRowHeight * 0.20).clamp(6.0, 10.0),
           )
         : baseSecondaryFontSize;
 
     // 在极小的单元格或行高中隐藏农历文本
-    // 增加更严格的条件以防止在极端约束下溢出
+    // 由于增大了字体和行高，可以放宽显示条件
     final showLunarText =
-        cellSize > 30 &&
-        (availableRowHeight == null || availableRowHeight > 24) &&
+        cellSize > 28 &&
+        (availableRowHeight == null || availableRowHeight > 30) &&
         primaryFontSize >= 8.0; // 确保主字体足够大时才显示农历
 
     return Container(
@@ -198,29 +209,29 @@ class _CalendarViewState extends State<CalendarView> {
     }
 
     // 根据单元格大小和可用行高动态计算字体大小
-    // 使用更保守的缩放以防止溢出
-    final basePrimaryFontSize = (cellSize * 0.18).clamp(6.0, 12.0);
-    final baseSecondaryFontSize = (cellSize * 0.10).clamp(4.0, 8.0);
+    // 增大字体大小，提升可读性
+    final basePrimaryFontSize = (cellSize * 0.22).clamp(8.0, 15.0);
+    final baseSecondaryFontSize = (cellSize * 0.12).clamp(6.0, 10.0);
 
     // 如果有可用行高信息，进一步限制字体大小
     final primaryFontSize = availableRowHeight != null
         ? basePrimaryFontSize.clamp(
-            6.0,
-            (availableRowHeight * 0.30).clamp(6.0, 12.0),
+            8.0,
+            (availableRowHeight * 0.35).clamp(8.0, 15.0),
           )
         : basePrimaryFontSize;
     final secondaryFontSize = availableRowHeight != null
         ? baseSecondaryFontSize.clamp(
-            4.0,
-            (availableRowHeight * 0.18).clamp(4.0, 8.0),
+            6.0,
+            (availableRowHeight * 0.20).clamp(6.0, 10.0),
           )
         : baseSecondaryFontSize;
 
     // 在极小的单元格或行高中隐藏农历文本
-    // 增加更严格的条件以防止在极端约束下溢出
+    // 由于增大了字体和行高，可以放宽显示条件
     final showLunarText =
-        cellSize > 30 &&
-        (availableRowHeight == null || availableRowHeight > 24) &&
+        cellSize > 28 &&
+        (availableRowHeight == null || availableRowHeight > 30) &&
         primaryFontSize >= 8.0; // 确保主字体足够大时才显示农历
 
     return Container(
@@ -371,41 +382,93 @@ class _CalendarViewState extends State<CalendarView> {
                 final availableHeight = constraints.maxHeight;
 
                 // 为500x500固定窗口优化的尺寸参数，同时保持响应性
-                final baseFontSize = (availableWidth / 50).clamp(9.0, 14.0);
+                // 增大字体基础大小，提升可读性，但在极小窗口中保持保守
+                final double baseFontSize;
+                if (availableHeight < 350 || availableWidth < 350) {
+                  // 极小窗口：使用更保守的字体大小
+                  baseFontSize = (availableWidth / 50).clamp(9.0, 13.0);
+                } else {
+                  // 正常窗口：使用改进的字体大小
+                  baseFontSize = (availableWidth / 45).clamp(11.0, 16.0);
+                }
 
                 // 计算当前月份需要的行数以调整其他参数
                 final rowsNeeded = _calculateRowsNeededForMonth(_focusedDay);
 
                 // 根据行数需求调整间距参数
-                final daysOfWeekHeight = (baseFontSize * 1.5).clamp(
-                  rowsNeeded == 6 ? 10.0 : 12.0, // 6行月份使用更小的星期标题高度
-                  24.0,
-                );
-                final headerPadding = (availableHeight * 0.015).clamp(
-                  rowsNeeded == 6 ? 2.0 : 4.0, // 6行月份使用更小的头部内边距
-                  16.0,
+                // 增加星期标题高度，避免与日期行重叠，但在极小窗口中保持保守
+                final double daysOfWeekHeight;
+                if (availableHeight < 350) {
+                  // 极小窗口：使用更保守的星期标题高度
+                  daysOfWeekHeight = (baseFontSize * 1.5).clamp(
+                    rowsNeeded == 6 ? 12.0 : 14.0,
+                    24.0,
+                  );
+                } else {
+                  // 正常窗口：使用改进的星期标题高度
+                  daysOfWeekHeight = (baseFontSize * 2.0).clamp(
+                    rowsNeeded == 6 ? 16.0 : 20.0,
+                    32.0,
+                  );
+                }
+
+                final headerPadding = (availableHeight * 0.02).clamp(
+                  rowsNeeded == 6 ? 4.0 : 6.0, // 6行月份使用稍小的头部内边距
+                  20.0,
                 );
                 final remainingHeight =
                     availableHeight - daysOfWeekHeight - headerPadding;
 
                 // 根据实际需要的行数动态调整行高
                 // 计算最小内容高度需求
-                final minContentHeight = baseFontSize * 2.2; // 主文字 + 农历文字 + 间距
-                const minCellPadding = 3.0; // 最小内边距
+                final minContentHeight = baseFontSize * 2.4; // 主文字 + 农历文字 + 间距
+                const minCellPadding = 4.0; // 增加最小内边距
                 final minRowHeight = minContentHeight + minCellPadding * 2;
 
-                // 为6行月份预留更紧凑的间距，为5行月份提供更宽松的间距
+                // 为6行月份预留更合理的间距，减少底部空白
+                // 改进的计算策略：为6行月份提供更好的垂直空间利用
                 final double rowHeight;
                 if (rowsNeeded == 6) {
-                  // 6行月份：确保有足够空间显示内容，但保持紧凑
-                  // 使用更保守的计算，留出更多缓冲空间防止溢出
-                  final idealHeight = remainingHeight / 8.0; // 更大的除数，更多缓冲空间
-                  rowHeight = idealHeight.clamp(minRowHeight, 42.0);
+                  // 6行月份：更积极的动态调整策略，显著增加行间距以减少底部空白
+                  final double divisor;
+                  switch (availableHeight) {
+                    case < 300:
+                      // 极小窗口：使用保守的除数防止溢出
+                      divisor = 9.0;
+                    case < 400:
+                      // 小窗口：更积极地增加空间
+                      divisor = 7.5;
+                    case < 500:
+                      // 中等窗口：显著增加空间
+                      divisor = 6.8;
+                    default:
+                      // 正常窗口：更积极地利用垂直空间，减少底部空白
+                      divisor = 6.5;
+                  }
+                  final idealHeight = remainingHeight / divisor;
+                  rowHeight = idealHeight.clamp(
+                    minRowHeight,
+                    55.0,
+                  ); // 从 51.0 增加到 55.0，允许更大的行高
                 } else {
                   // 5行月份：使用更宽松的布局，减少底部空白
-                  // 计算可用空间并平均分配给5行
-                  final idealHeight = remainingHeight / 6.2; // 留出一些缓冲空间
-                  rowHeight = idealHeight.clamp(minRowHeight, 62.0);
+                  final double divisor;
+                  switch (availableHeight) {
+                    case < 300:
+                      // 极小窗口：更保守
+                      divisor = 7.0;
+                    case < 400:
+                      // 小窗口：适中
+                      divisor = 6.2;
+                    default:
+                      // 正常窗口：更宽松
+                      divisor = 5.8;
+                  }
+                  final idealHeight = remainingHeight / divisor;
+                  rowHeight = idealHeight.clamp(
+                    minRowHeight,
+                    70.0,
+                  ); // 保持原值 70.0 上限
                 }
 
                 // 计算单元格大小用于动态样式
@@ -442,6 +505,23 @@ class _CalendarViewState extends State<CalendarView> {
                       fontSize: baseFontSize,
                       fontWeight: FontWeight.w500,
                       color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  daysOfWeekStyle: DaysOfWeekStyle(
+                    // 星期标题样式，确保与日期行有足够间距
+                    weekdayStyle: TextStyle(
+                      fontSize: (baseFontSize * 0.9).clamp(10.0, 14.0),
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.8),
+                    ),
+                    weekendStyle: TextStyle(
+                      fontSize: (baseFontSize * 0.9).clamp(10.0, 14.0),
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: 0.8),
                     ),
                   ),
                   startingDayOfWeek: StartingDayOfWeek.monday,
