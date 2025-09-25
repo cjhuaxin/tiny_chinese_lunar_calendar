@@ -40,7 +40,7 @@ class _CalendarViewState extends State<CalendarView> {
   @override
   void initState() {
     super.initState();
-    _focusedDay = widget.initialFocusedDay ?? kToday;
+    _focusedDay = widget.initialFocusedDay ?? DateTime.now();
   }
 
   /// 构建非当月日期单元格，同时显示公历和农历日期
@@ -52,9 +52,12 @@ class _CalendarViewState extends State<CalendarView> {
     double? availableRowHeight,
   }) {
     final lunarDate = Lunar.fromDate(day);
+    final isWeekend =
+        day.weekday == DateTime.saturday || day.weekday == DateTime.sunday;
 
     Color? backgroundColor;
     Color? textColor;
+    Color? lunarTextColor;
     EdgeInsets margin;
     EdgeInsets padding;
     double borderRadius;
@@ -66,7 +69,14 @@ class _CalendarViewState extends State<CalendarView> {
 
     // 非当月日期使用灰色文字，但保持相同的大小和布局
     backgroundColor = null;
-    textColor = Colors.grey[400]; // 非当月日期使用灰色
+    if (isWeekend) {
+      // 周末日期使用红色，但因为是非当月日期，所以使用较淡的红色
+      textColor = Colors.red.withValues(alpha: 0.4);
+    } else {
+      textColor = Colors.grey[400]; // 非当月日期使用灰色
+    }
+    // 农历文字保持原有的灰色样式
+    lunarTextColor = Colors.grey[400];
     margin = EdgeInsets.zero;
     padding = EdgeInsets.symmetric(
       horizontal: dynamicPadding,
@@ -135,7 +145,7 @@ class _CalendarViewState extends State<CalendarView> {
                     lunarDate.getDayInChinese(),
                     style: TextStyle(
                       fontSize: secondaryFontSize,
-                      color: textColor?.withValues(alpha: 0.7), // 农历文字更淡一些
+                      color: lunarTextColor?.withValues(alpha: 0.7), // 农历文字保持灰色
                       height: 1,
                     ),
                   ),
@@ -156,9 +166,12 @@ class _CalendarViewState extends State<CalendarView> {
     double? availableRowHeight,
   }) {
     final lunarDate = Lunar.fromDate(day);
+    final isWeekend =
+        day.weekday == DateTime.saturday || day.weekday == DateTime.sunday;
 
     Color? backgroundColor;
     Color? textColor;
+    Color? lunarTextColor;
     EdgeInsets margin;
     EdgeInsets padding;
     double borderRadius;
@@ -171,25 +184,29 @@ class _CalendarViewState extends State<CalendarView> {
     if (isSelected) {
       backgroundColor = Theme.of(context).primaryColor;
       textColor = Colors.white;
-      // No margin at all for maximum width, create square-like effect
-      margin = EdgeInsets.zero;
+      lunarTextColor = Colors.white;
+      // Add horizontal margin to create narrower, more proportioned highlight
+      final horizontalMargin = (cellSize * 0.12).clamp(3.0, 8.0);
+      margin = EdgeInsets.symmetric(horizontal: horizontalMargin);
       padding = EdgeInsets.symmetric(
         horizontal: dynamicPadding,
         vertical: dynamicPadding,
       );
       borderRadius = dynamicBorderRadius;
-      // Add subtle shadow for better visual hierarchy
+      // Add subtle shadow for better visual hierarchy - more refined
       boxShadow = [
         BoxShadow(
-          color: Theme.of(context).primaryColor.withValues(alpha: 0.25),
+          color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
           blurRadius: 2,
         ),
       ];
     } else if (isToday) {
       backgroundColor = Theme.of(context).primaryColor.withValues(alpha: 0.15);
       textColor = Theme.of(context).primaryColor;
+      lunarTextColor = Theme.of(context).primaryColor;
       // Same margin and border radius as selected for consistency
-      margin = EdgeInsets.zero;
+      final horizontalMargin = (cellSize * 0.12).clamp(3.0, 8.0);
+      margin = EdgeInsets.symmetric(horizontal: horizontalMargin);
       padding = EdgeInsets.symmetric(
         horizontal: dynamicPadding,
         vertical: dynamicPadding,
@@ -198,7 +215,14 @@ class _CalendarViewState extends State<CalendarView> {
       boxShadow = null;
     } else {
       backgroundColor = null;
-      textColor = null;
+      if (isWeekend) {
+        // 周末日期使用红色
+        textColor = Colors.red;
+      } else {
+        textColor = null;
+      }
+      // 农历文字保持原有样式，不受周末影响
+      lunarTextColor = null;
       margin = EdgeInsets.zero;
       padding = EdgeInsets.symmetric(
         horizontal: dynamicPadding,
@@ -275,7 +299,7 @@ class _CalendarViewState extends State<CalendarView> {
                     style: TextStyle(
                       fontSize: secondaryFontSize,
                       color:
-                          textColor ??
+                          lunarTextColor ??
                           Theme.of(
                             context,
                           ).colorScheme.onSurface.withValues(alpha: 0.6),
@@ -363,8 +387,8 @@ class _CalendarViewState extends State<CalendarView> {
             icon: const Icon(Icons.today),
             onPressed: () {
               setState(() {
-                _focusedDay = kToday;
-                _selectedDay = kToday;
+                _focusedDay = DateTime.now();
+                _selectedDay = null;
               });
             },
             tooltip: l10n.today,
@@ -493,13 +517,7 @@ class _CalendarViewState extends State<CalendarView> {
                       color: Colors.grey[400],
                       fontSize: baseFontSize,
                     ),
-                    // Weekend styling - 使用更柔和的红色
-                    weekendTextStyle: TextStyle(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.primary.withValues(alpha: 0.8),
-                      fontSize: baseFontSize,
-                    ),
+                    // 移除周末样式设置，因为我们在自定义builder中处理
                     // Default text style
                     defaultTextStyle: TextStyle(
                       fontSize: baseFontSize,
@@ -519,9 +537,7 @@ class _CalendarViewState extends State<CalendarView> {
                     weekendStyle: TextStyle(
                       fontSize: (baseFontSize * 0.9).clamp(10.0, 14.0),
                       fontWeight: FontWeight.w600,
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.primary.withValues(alpha: 0.8),
+                      color: Colors.red, // 周末星期标题使用红色
                     ),
                   ),
                   startingDayOfWeek: StartingDayOfWeek.monday,
