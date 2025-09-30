@@ -30,8 +30,26 @@ class MainFlutterWindow: NSWindow {
     // 移除窗口大小调整功能
     self.styleMask.remove(.resizable)
 
+    // 完全移除标题栏，让Flutter内容从窗口顶部开始
+    self.styleMask.remove(.titled)
+    self.styleMask.remove(.closable)
+    self.styleMask.remove(.miniaturizable)
+
+    // 允许通过拖动窗口背景来移动窗口（因为没有标题栏了）
+    self.isMovableByWindowBackground = true
+
     // 确保窗口不能被调整大小
     self.isRestorable = false
+
+    // 调整内容视图的frame，向上移动以消除顶部空白区域
+    // 标题栏通常占用约28像素，我们将内容向上扩展这个高度
+    if let contentView = self.contentView {
+      let titleBarHeight: CGFloat = 28.0
+      var newFrame = contentView.frame
+      newFrame.origin.y = -titleBarHeight
+      newFrame.size.height = CGFloat(winHeight) + titleBarHeight
+      contentView.frame = newFrame
+    }
 
     RegisterGeneratedPlugins(registry: flutterViewController)
 

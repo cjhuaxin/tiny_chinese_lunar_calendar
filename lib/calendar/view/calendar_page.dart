@@ -378,254 +378,206 @@ class _CalendarViewState extends State<CalendarView> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.calendarAppBarTitle),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.today),
-            onPressed: () {
-              setState(() {
-                _focusedDay = DateTime.now();
-                _selectedDay = null;
-              });
-            },
-            tooltip: l10n.today,
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // 日历组件
-          Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                // 计算可用尺寸，使用响应式设计
-                final availableWidth = constraints.maxWidth;
-                final availableHeight = constraints.maxHeight;
+    return MediaQuery.removePadding(
+      context: context,
+      removeTop: true,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(l10n.calendarAppBarTitle),
+          centerTitle: true,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.today),
+              onPressed: () {
+                setState(() {
+                  _focusedDay = DateTime.now();
+                  _selectedDay = null;
+                });
+              },
+              tooltip: l10n.today,
+            ),
+          ],
+        ),
+        body: Column(
+          children: [
+            // 日历组件
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  // 计算可用尺寸，使用响应式设计
+                  final availableWidth = constraints.maxWidth;
+                  final availableHeight = constraints.maxHeight;
 
-                // 为500x500固定窗口优化的尺寸参数，同时保持响应性
-                // 增大字体基础大小，提升可读性，但在极小窗口中保持保守
-                final double baseFontSize;
-                if (availableHeight < 350 || availableWidth < 350) {
-                  // 极小窗口：使用更保守的字体大小
-                  baseFontSize = (availableWidth / 50).clamp(9.0, 13.0);
-                } else {
-                  // 正常窗口：使用改进的字体大小
-                  baseFontSize = (availableWidth / 45).clamp(11.0, 16.0);
-                }
+                  // 计算当前月份需要的行数以调整其他参数
+                  final rowsNeeded = _calculateRowsNeededForMonth(_focusedDay);
 
-                // 计算当前月份需要的行数以调整其他参数
-                final rowsNeeded = _calculateRowsNeededForMonth(_focusedDay);
+                  // 为500x450固定窗口优化的尺寸参数
+                  // 使用更小的字体以确保有足够空间
+                  final double baseFontSize = (availableWidth / 55).clamp(
+                    9.0,
+                    12.0,
+                  );
 
-                // 根据行数需求调整间距参数
-                // 增加星期标题高度，避免与日期行重叠，但在极小窗口中保持保守
-                final double daysOfWeekHeight;
-                if (availableHeight < 350) {
-                  // 极小窗口：使用更保守的星期标题高度
-                  daysOfWeekHeight = (baseFontSize * 1.5).clamp(
-                    rowsNeeded == 6 ? 12.0 : 14.0,
+                  // 计算月份标题的高度（TableCalendar内部的header）
+                  final headerFontSize = (baseFontSize * 1.2).clamp(14.0, 18.0);
+                  final headerPadding = (baseFontSize * 0.15).clamp(1.0, 3.0);
+                  final calendarHeaderHeight =
+                      headerFontSize + headerPadding * 2 + 10.0; // 增加额外间距
+
+                  // 星期标题高度 - 使用紧凑的布局
+                  final daysOfWeekHeight = (baseFontSize * 1.8).clamp(
+                    20.0,
                     24.0,
                   );
-                } else {
-                  // 正常窗口：使用改进的星期标题高度
-                  daysOfWeekHeight = (baseFontSize * 2.0).clamp(
-                    rowsNeeded == 6 ? 16.0 : 20.0,
-                    32.0,
-                  );
-                }
 
-                final headerPadding = (availableHeight * 0.02).clamp(
-                  rowsNeeded == 6 ? 4.0 : 6.0, // 6行月份使用稍小的头部内边距
-                  20.0,
-                );
-                final remainingHeight =
-                    availableHeight - daysOfWeekHeight - headerPadding;
+                  // 计算日期行可用的剩余高度
+                  // 从总高度中减去：月份标题高度 + 星期标题高度 + 底部安全边距
+                  // 关键：必须留出足够的底部边距，确保最后一行完全可见
+                  final bottomSafetyMargin = rowsNeeded == 6 ? 30.0 : 25.0;
+                  final remainingHeight =
+                      availableHeight -
+                      calendarHeaderHeight -
+                      daysOfWeekHeight -
+                      bottomSafetyMargin;
 
-                // 根据实际需要的行数动态调整行高
-                // 计算最小内容高度需求
-                final minContentHeight = baseFontSize * 2.4; // 主文字 + 农历文字 + 间距
-                const minCellPadding = 4.0; // 增加最小内边距
-                final minRowHeight = minContentHeight + minCellPadding * 2;
-
-                // 为6行月份预留更合理的间距，减少底部空白
-                // 改进的计算策略：为6行月份提供更好的垂直空间利用
-                final double rowHeight;
-                if (rowsNeeded == 6) {
-                  // 6行月份：更积极的动态调整策略，显著增加行间距以减少底部空白
-                  final double divisor;
-                  switch (availableHeight) {
-                    case < 300:
-                      // 极小窗口：使用保守的除数防止溢出
-                      divisor = 9.0;
-                    case < 400:
-                      // 小窗口：更积极地增加空间
-                      divisor = 7.5;
-                    case < 500:
-                      // 中等窗口：显著增加空间
-                      divisor = 6.8;
-                    default:
-                      // 正常窗口：更积极地利用垂直空间，减少底部空白
-                      divisor = 6.5;
+                  // 根据实际需要的行数动态调整行高
+                  // 关键：严格控制行高，确保所有行都完全可见
+                  // 使用更紧凑的行高，减少行间距
+                  final double rowHeight;
+                  if (rowsNeeded == 6) {
+                    // 6行月份：使用紧凑的行高，确保第6行完全可见
+                    rowHeight = (remainingHeight / 6.0).clamp(40.0, 52.0);
+                  } else {
+                    // 5行月份：使用稍紧凑的行高
+                    rowHeight = (remainingHeight / 5.0).clamp(45.0, 60.0);
                   }
-                  final idealHeight = remainingHeight / divisor;
-                  rowHeight = idealHeight.clamp(
-                    minRowHeight,
-                    55.0,
-                  ); // 从 51.0 增加到 55.0，允许更大的行高
-                } else {
-                  // 5行月份：使用更宽松的布局，减少底部空白
-                  final double divisor;
-                  switch (availableHeight) {
-                    case < 300:
-                      // 极小窗口：更保守
-                      divisor = 7.0;
-                    case < 400:
-                      // 小窗口：适中
-                      divisor = 6.2;
-                    default:
-                      // 正常窗口：更宽松
-                      divisor = 5.8;
-                  }
-                  final idealHeight = remainingHeight / divisor;
-                  rowHeight = idealHeight.clamp(
-                    minRowHeight,
-                    70.0,
-                  ); // 保持原值 70.0 上限
-                }
 
-                // 计算单元格大小用于动态样式
-                final cellSize = (availableWidth / 7).clamp(50.0, 80.0);
+                  // 计算单元格大小用于动态样式
+                  final cellSize = (availableWidth / 7).clamp(50.0, 80.0);
 
-                return TableCalendar<dynamic>(
-                  focusedDay: _focusedDay,
-                  firstDay: kFirstDay,
-                  lastDay: kLastDay,
-                  daysOfWeekHeight: daysOfWeekHeight,
-                  rowHeight: rowHeight,
-                  locale: Localizations.localeOf(context).toString(),
-                  headerStyle: const HeaderStyle(
-                    formatButtonVisible: false,
-                    titleCentered: true,
-                  ),
-                  calendarStyle: CalendarStyle(
-                    // Minimize cell margin for wider highlights
-                    cellMargin: EdgeInsets.zero,
-                    // Style for outside days (previous/next month)
-                    outsideTextStyle: TextStyle(
-                      color: Colors.grey[400],
-                      fontSize: baseFontSize,
+                  return TableCalendar<dynamic>(
+                    focusedDay: _focusedDay,
+                    firstDay: kFirstDay,
+                    lastDay: kLastDay,
+                    daysOfWeekHeight: daysOfWeekHeight,
+                    rowHeight: rowHeight,
+                    locale: Localizations.localeOf(context).toString(),
+                    headerStyle: const HeaderStyle(
+                      formatButtonVisible: false,
+                      titleCentered: true,
                     ),
-                    // 移除周末样式设置，因为我们在自定义builder中处理
-                    // Default text style
-                    defaultTextStyle: TextStyle(
-                      fontSize: baseFontSize,
-                      fontWeight: FontWeight.w500,
-                      color: Theme.of(context).colorScheme.onSurface,
+                    calendarStyle: CalendarStyle(
+                      // Minimize cell margin for wider highlights
+                      cellMargin: EdgeInsets.zero,
+                      // Style for outside days (previous/next month)
+                      outsideTextStyle: TextStyle(
+                        color: Colors.grey[400],
+                        fontSize: baseFontSize,
+                      ),
+                      // 移除周末样式设置，因为我们在自定义builder中处理
+                      // Default text style
+                      defaultTextStyle: TextStyle(
+                        fontSize: baseFontSize,
+                        fontWeight: FontWeight.w500,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
                     ),
-                  ),
-                  daysOfWeekStyle: DaysOfWeekStyle(
-                    // 星期标题样式，确保与日期行有足够间距
-                    weekdayStyle: TextStyle(
-                      fontSize: (baseFontSize * 0.9).clamp(10.0, 14.0),
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.onSurface.withValues(alpha: 0.8),
+                    daysOfWeekStyle: DaysOfWeekStyle(
+                      // 星期标题样式，确保与日期行有足够间距
+                      weekdayStyle: TextStyle(
+                        fontSize: (baseFontSize * 0.9).clamp(10.0, 14.0),
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.8),
+                      ),
+                      weekendStyle: TextStyle(
+                        fontSize: (baseFontSize * 0.9).clamp(10.0, 14.0),
+                        fontWeight: FontWeight.w600,
+                        color: Colors.red, // 周末星期标题使用红色
+                      ),
                     ),
-                    weekendStyle: TextStyle(
-                      fontSize: (baseFontSize * 0.9).clamp(10.0, 14.0),
-                      fontWeight: FontWeight.w600,
-                      color: Colors.red, // 周末星期标题使用红色
-                    ),
-                  ),
-                  startingDayOfWeek: StartingDayOfWeek.monday,
-                  calendarBuilders: CalendarBuilders(
-                    headerTitleBuilder: (context, day) {
-                      final locale = Localizations.localeOf(context);
-                      final formatter = DateFormat.yMMMM(locale.toString());
-                      final headerFontSize = (baseFontSize * 1.2).clamp(
-                        16.0,
-                        22.0,
-                      );
-                      return Container(
-                        padding: EdgeInsets.all(
-                          (baseFontSize * 0.15).clamp(1.0, 4.0),
-                        ), // 更激进地减少年月标题的内边距
-                        child: Text(
-                          formatter.format(day),
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: headerFontSize,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.primary,
+                    startingDayOfWeek: StartingDayOfWeek.monday,
+                    calendarBuilders: CalendarBuilders(
+                      headerTitleBuilder: (context, day) {
+                        final locale = Localizations.localeOf(context);
+                        final formatter = DateFormat.yMMMM(locale.toString());
+                        return Container(
+                          padding: EdgeInsets.all(headerPadding),
+                          child: Text(
+                            formatter.format(day),
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: headerFontSize,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
                           ),
-                        ),
-                      );
-                    },
-                    defaultBuilder: (context, day, focusedDay) {
-                      return _buildDateCell(
-                        day,
-                        false,
-                        false,
-                        cellSize,
-                        availableRowHeight: rowHeight,
-                      );
-                    },
-                    selectedBuilder: (context, day, focusedDay) {
-                      return _buildDateCell(
-                        day,
-                        true,
-                        false,
-                        cellSize,
-                        availableRowHeight: rowHeight,
-                      );
-                    },
-                    todayBuilder: (context, day, focusedDay) {
-                      return _buildDateCell(
-                        day,
-                        false,
-                        true,
-                        cellSize,
-                        availableRowHeight: rowHeight,
-                      );
-                    },
-                    // 添加 outsideBuilder 确保非当月日期也使用相同的自定义样式
-                    outsideBuilder: (context, day, focusedDay) {
-                      // 只显示当月最后一天所在行的下个月日期
-                      if (_shouldShowOutsideDay(day, focusedDay)) {
-                        return _buildOutsideDateCell(
+                        );
+                      },
+                      defaultBuilder: (context, day, focusedDay) {
+                        return _buildDateCell(
                           day,
                           false,
                           false,
                           cellSize,
                           availableRowHeight: rowHeight,
                         );
-                      }
-                      // 不显示其他非当月日期
-                      return const SizedBox.shrink();
+                      },
+                      selectedBuilder: (context, day, focusedDay) {
+                        return _buildDateCell(
+                          day,
+                          true,
+                          false,
+                          cellSize,
+                          availableRowHeight: rowHeight,
+                        );
+                      },
+                      todayBuilder: (context, day, focusedDay) {
+                        return _buildDateCell(
+                          day,
+                          false,
+                          true,
+                          cellSize,
+                          availableRowHeight: rowHeight,
+                        );
+                      },
+                      // 添加 outsideBuilder 确保非当月日期也使用相同的自定义样式
+                      outsideBuilder: (context, day, focusedDay) {
+                        // 只显示当月最后一天所在行的下个月日期
+                        if (_shouldShowOutsideDay(day, focusedDay)) {
+                          return _buildOutsideDateCell(
+                            day,
+                            false,
+                            false,
+                            cellSize,
+                            availableRowHeight: rowHeight,
+                          );
+                        }
+                        // 不显示其他非当月日期
+                        return const SizedBox.shrink();
+                      },
+                    ),
+                    selectedDayPredicate: (day) {
+                      return isSameDay(_selectedDay, day);
                     },
-                  ),
-                  selectedDayPredicate: (day) {
-                    return isSameDay(_selectedDay, day);
-                  },
-                  onDaySelected: (selectedDay, focusedDay) {
-                    setState(() {
-                      _selectedDay = selectedDay;
-                      _focusedDay = focusedDay;
-                    });
-                  },
-                  onPageChanged: (focusedDay) {
-                    setState(() {
-                      _focusedDay = focusedDay;
-                    });
-                  },
-                );
-              },
+                    onDaySelected: (selectedDay, focusedDay) {
+                      setState(() {
+                        _selectedDay = selectedDay;
+                        _focusedDay = focusedDay;
+                      });
+                    },
+                    onPageChanged: (focusedDay) {
+                      setState(() {
+                        _focusedDay = focusedDay;
+                      });
+                    },
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
