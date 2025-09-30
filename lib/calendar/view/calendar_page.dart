@@ -181,7 +181,9 @@ class _CalendarViewState extends State<CalendarView> {
     final dynamicPadding = (cellSize * 0.08).clamp(2.0, 8.0);
     final dynamicBorderRadius = (cellSize * 0.15).clamp(4.0, 16.0);
 
-    if (isSelected) {
+    if (isSelected && isToday) {
+      // When today is selected: combine both styles
+      // - filled background with border
       backgroundColor = Theme.of(context).primaryColor;
       textColor = Colors.white;
       lunarTextColor = Colors.white;
@@ -200,11 +202,16 @@ class _CalendarViewState extends State<CalendarView> {
           blurRadius: 2,
         ),
       ];
-    } else if (isToday) {
-      backgroundColor = Theme.of(context).primaryColor.withValues(alpha: 0.15);
-      textColor = Theme.of(context).primaryColor;
-      lunarTextColor = Theme.of(context).primaryColor;
-      // Same margin and border radius as selected for consistency
+    } else if (isSelected) {
+      // Selected day: red border only
+      backgroundColor = null;
+      if (isWeekend) {
+        textColor = Colors.red;
+      } else {
+        textColor = null;
+      }
+      lunarTextColor = null;
+      // Add horizontal margin to create narrower, more proportioned highlight
       final horizontalMargin = (cellSize * 0.12).clamp(3.0, 8.0);
       margin = EdgeInsets.symmetric(horizontal: horizontalMargin);
       padding = EdgeInsets.symmetric(
@@ -213,6 +220,26 @@ class _CalendarViewState extends State<CalendarView> {
       );
       borderRadius = dynamicBorderRadius;
       boxShadow = null;
+    } else if (isToday) {
+      // Today: use the old selected style (filled background)
+      backgroundColor = Theme.of(context).primaryColor;
+      textColor = Colors.white;
+      lunarTextColor = Colors.white;
+      // Add horizontal margin to create narrower, more proportioned highlight
+      final horizontalMargin = (cellSize * 0.12).clamp(3.0, 8.0);
+      margin = EdgeInsets.symmetric(horizontal: horizontalMargin);
+      padding = EdgeInsets.symmetric(
+        horizontal: dynamicPadding,
+        vertical: dynamicPadding,
+      );
+      borderRadius = dynamicBorderRadius;
+      // Add subtle shadow for better visual hierarchy - more refined
+      boxShadow = [
+        BoxShadow(
+          color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
+          blurRadius: 2,
+        ),
+      ];
     } else {
       backgroundColor = null;
       if (isWeekend) {
@@ -271,10 +298,10 @@ class _CalendarViewState extends State<CalendarView> {
             decoration: BoxDecoration(
               color: backgroundColor,
               borderRadius: BorderRadius.circular(borderRadius),
-              border: isToday && !isSelected
+              border: isSelected
                   ? Border.all(
-                      color: Theme.of(context).primaryColor,
-                      width: 1.5,
+                      color: Colors.red,
+                      width: 2,
                     )
                   : null,
               boxShadow: boxShadow,
@@ -525,10 +552,12 @@ class _CalendarViewState extends State<CalendarView> {
                         );
                       },
                       selectedBuilder: (context, day, focusedDay) {
+                        // Check if selected day is also today
+                        final isToday = isSameDay(day, DateTime.now());
                         return _buildDateCell(
                           day,
                           true,
-                          false,
+                          isToday,
                           cellSize,
                           availableRowHeight: rowHeight,
                         );
