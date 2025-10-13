@@ -35,7 +35,7 @@ void main() {
       expect(daysToFill, equals(4));
 
       // 下个月的前4天应该显示：2月1-4日
-      final nextMonth1 = DateTime(2024, 2, 1);
+      final nextMonth1 = DateTime(2024, 2);
       final nextMonth4 = DateTime(2024, 2, 4);
       final nextMonth5 = DateTime(2024, 2, 5);
 
@@ -74,7 +74,7 @@ void main() {
       expect(daysToFill, equals(0));
 
       // 当最后一天是周日时，不需要显示下个月的任何日期
-      final nextMonth1 = DateTime(2024, 4, 1);
+      final nextMonth1 = DateTime(2024, 4);
       expect(nextMonth1.difference(lastDayOfMonth).inDays > daysToFill, isTrue);
     });
   });

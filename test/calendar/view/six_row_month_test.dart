@@ -109,7 +109,7 @@ void main() {
   group('Row Calculation Verification for 6-Row Months', () {
     test('Verify June 2025 needs exactly 6 rows', () {
       // June 2025: 1st is Sunday (weekday 7)
-      final firstDay = DateTime(2025, 6, 1);
+      final firstDay = DateTime(2025, 6);
       expect(firstDay.weekday, equals(7)); // Sunday
 
       // Calculate rows needed
@@ -127,7 +127,7 @@ void main() {
 
     test('Verify March 2025 needs exactly 6 rows', () {
       // March 2025: 1st is Saturday (weekday 6)
-      final firstDay = DateTime(2025, 3, 1);
+      final firstDay = DateTime(2025, 3);
       expect(firstDay.weekday, equals(6)); // Saturday
 
       // Calculate rows needed

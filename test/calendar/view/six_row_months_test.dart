@@ -20,7 +20,7 @@ void main() {
               width: 500,
               height: 500,
               child: CalendarView(
-                initialFocusedDay: DateTime(2025, 6, 1), // June 2025 - 6 rows
+                initialFocusedDay: DateTime(2025, 6), // June 2025 - 6 rows
               ),
             ),
           ),
@@ -51,7 +51,7 @@ void main() {
               width: 500,
               height: 500,
               child: CalendarView(
-                initialFocusedDay: DateTime(2026, 3, 1), // March 2026 - 6 rows
+                initialFocusedDay: DateTime(2026, 3), // March 2026 - 6 rows
               ),
             ),
           ),

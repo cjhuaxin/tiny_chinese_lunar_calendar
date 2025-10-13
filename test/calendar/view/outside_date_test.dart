@@ -6,10 +6,10 @@ import 'package:tiny_chinese_lunar_calendar/l10n/l10n.dart';
 void main() {
   group('Outside Date Cell Tests', () {
     Widget createTestApp() {
-      return MaterialApp(
+      return const MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: const CalendarPage(),
+        home: CalendarPage(),
       );
     }
 

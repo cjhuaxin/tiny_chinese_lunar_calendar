@@ -14,7 +14,7 @@ void main() {
       // 计算需要填充的天数
       final daysToFill = 6 - lastDayWeekday; // 6 - 2 = 4天
       print('需要填充的下个月日期数: $daysToFill');
-      print('应该显示: 2月1日 到 2月${daysToFill}日');
+      print('应该显示: 2月1日 到 2月$daysToFill日');
       
       expect(daysToFill, equals(4));
     });
@@ -48,7 +48,7 @@ void main() {
       // 计算需要填充的天数
       final daysToFill = 6 - lastDayWeekday; // 6 - 3 = 3天
       print('需要填充的下个月日期数: $daysToFill');
-      print('应该显示: 3月1日 到 3月${daysToFill}日');
+      print('应该显示: 3月1日 到 3月$daysToFill日');
       
       expect(daysToFill, equals(3));
     });
@@ -65,7 +65,7 @@ void main() {
       // 计算需要填充的天数
       final daysToFill = 6 - lastDayWeekday; // 6 - 1 = 5天
       print('需要填充的下个月日期数: $daysToFill');
-      print('应该显示: 2025年1月1日 到 1月${daysToFill}日');
+      print('应该显示: 2025年1月1日 到 1月$daysToFill日');
       
       expect(daysToFill, equals(5));
     });

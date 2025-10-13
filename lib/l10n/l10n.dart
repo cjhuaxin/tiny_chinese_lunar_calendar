@@ -1,5 +1,5 @@
-import 'package:tiny_chinese_lunar_calendar/l10n/gen/app_localizations.dart';
 import 'package:flutter/widgets.dart';
+import 'package:tiny_chinese_lunar_calendar/l10n/gen/app_localizations.dart';
 
 export 'package:tiny_chinese_lunar_calendar/l10n/gen/app_localizations.dart';
 

@@ -12,7 +12,7 @@ void main() {
       await tester.binding.setSurfaceSize(const Size(500, 500));
 
       await tester.pumpWidget(
-        MaterialApp(
+        const MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
@@ -83,7 +83,7 @@ void main() {
       const baseFontSize = 11.0;
       const daysOfWeekHeight = 22.0;
       const headerPadding = 8.0;
-      final remainingHeight =
+      const remainingHeight =
           availableHeight - daysOfWeekHeight - headerPadding;
 
       // 测试6行月份的行高计算

@@ -130,7 +130,7 @@ void main() {
       // These months should need 5 rows
       final fiveRowMonths = [
         DateTime(2025, 5), // May 2025 - 1st is Thursday
-        DateTime(2025, 1), // January 2025 - 1st is Wednesday
+        DateTime(2025), // January 2025 - 1st is Wednesday
         DateTime(2024, 2), // February 2024 - 1st is Thursday (leap year)
         DateTime(2025, 4), // April 2025 - 1st is Tuesday
       ];
