@@ -11,6 +11,7 @@ import FlutterMacOS
   var contextMenu: NSMenu?
   var settingsWindow: NSWindow?
   var settingsEventMonitor: Any?
+  var iconUpdateTimer: Timer?
 
 
   override func applicationWillFinishLaunching(_ notification: Notification) {
@@ -78,8 +79,7 @@ import FlutterMacOS
     }
 
     // 设置按钮属性
-    button.title = "🗓️"  // 使用日历图标
-    button.font = NSFont.systemFont(ofSize: 16)
+    updateTrayIcon() // Use dynamic icon
     button.action = #selector(statusBarButtonClicked)
     button.target = self
     button.toolTip = "Tiny Chinese Lunar Calendar - Click to show/hide"
@@ -94,12 +94,15 @@ import FlutterMacOS
     setupContextMenu()
 
     NSLog("Status bar item created with calendar icon")
+
+    // Setup timer to update icon daily
+    setupIconUpdateTimer()
   }
   func setupContextMenu() {
     contextMenu = NSMenu()
 
     // App Settings menu item
-    let settingsItem = NSMenuItem(title: "Settings...", action: #selector(showAppSettings), keyEquivalent: ",")
+    let settingsItem = NSMenuItem(title: "设置", action: #selector(showAppSettings), keyEquivalent: ",")
     settingsItem.target = self
     contextMenu?.addItem(settingsItem)
 
@@ -107,7 +110,7 @@ import FlutterMacOS
     contextMenu?.addItem(NSMenuItem.separator())
 
     // About menu item
-    let aboutItem = NSMenuItem(title: "About Tiny Chinese Lunar Calendar", action: #selector(showAbout), keyEquivalent: "")
+    let aboutItem = NSMenuItem(title: "关于", action: #selector(showAbout), keyEquivalent: "")
     aboutItem.target = self
     contextMenu?.addItem(aboutItem)
 
@@ -115,9 +118,107 @@ import FlutterMacOS
     contextMenu?.addItem(NSMenuItem.separator())
 
     // Quit menu item
-    let quitItem = NSMenuItem(title: "Quit", action: #selector(quitApplication), keyEquivalent: "q")
+    let quitItem = NSMenuItem(title: "退出", action: #selector(quitApplication), keyEquivalent: "q")
     quitItem.target = self
     contextMenu?.addItem(quitItem)
+  }
+
+  // MARK: - Dynamic Icon Generation
+
+  func updateTrayIcon() {
+    guard let statusItem = statusItem,
+          let button = statusItem.button else {
+      NSLog("Failed to get status item button for icon update")
+      return
+    }
+
+    let icon = generateCalendarIcon()
+    button.image = icon
+    button.title = "" // Clear any text title
+
+    NSLog("Tray icon updated with current date")
+  }
+
+  func generateCalendarIcon() -> NSImage {
+    let iconSize = NSSize(width: 22, height: 22) // Increased size for clarity
+    let image = NSImage(size: iconSize)
+
+    image.lockFocus()
+
+    // Get current date components
+    let calendar = Calendar.current
+    let now = Date()
+    let day = calendar.component(.day, from: now)
+
+    // Get weekday abbreviation (e.g., "周二" for Tuesday)
+    let formatter = DateFormatter()
+    formatter.locale = Locale(identifier: "zh_CN")
+    formatter.dateFormat = "E"
+    let weekdayText = formatter.string(from: now)
+
+    // Define a rounded rectangle path for the icon background
+    let cornerRadius: CGFloat = 4.0
+    let backgroundPath = NSBezierPath(roundedRect: NSRect(origin: .zero, size: iconSize), xRadius: cornerRadius, yRadius: cornerRadius)
+
+    // Draw background
+    NSColor.white.setFill()
+    backgroundPath.fill()
+
+    // Draw weekday text (at the top, in red) - smaller and less prominent
+    let weekdayFont: NSFont = NSFont.systemFont(ofSize: 7, weight: .semibold)
+    let weekdayAttributes: [NSAttributedString.Key: Any] = [
+        .font: weekdayFont,
+        .foregroundColor: NSColor.systemRed
+    ]
+    let weekdayString = NSAttributedString(string: weekdayText, attributes: weekdayAttributes)
+    let weekdaySize = weekdayString.size()
+    let weekdayRect = NSRect(
+        x: (iconSize.width - weekdaySize.width) / 2,
+        y: iconSize.height - weekdaySize.height - 1, // Position closer to top
+        width: weekdaySize.width,
+        height: weekdaySize.height
+    )
+    weekdayString.draw(in: weekdayRect)
+
+    // Draw day number (larger, bold, with more spacing from weekday)
+    let dayFont = NSFont.systemFont(ofSize: 13, weight: .medium)
+    let dayAttributes: [NSAttributedString.Key: Any] = [
+        .font: dayFont,
+        .foregroundColor: NSColor.black
+    ]
+    let dayString = NSAttributedString(string: "\(day)", attributes: dayAttributes)
+    let daySize = dayString.size()
+    let dayRect = NSRect(
+        x: (iconSize.width - daySize.width) / 2,
+        y: (iconSize.height - daySize.height) / 2 - 3, // More spacing from weekday
+        width: daySize.width,
+        height: daySize.height
+    )
+    dayString.draw(in: dayRect)
+
+    image.unlockFocus()
+
+    return image
+  }
+
+  func setupIconUpdateTimer() {
+    // Calculate time until next midnight
+    let calendar = Calendar.current
+    let now = Date()
+    let tomorrow = calendar.date(byAdding: .day, value: 1, to: now)!
+    let midnight = calendar.startOfDay(for: tomorrow)
+
+    // Create timer to fire at midnight
+    iconUpdateTimer = Timer(fireAt: midnight, interval: 24 * 60 * 60, target: self, selector: #selector(updateTrayIconTimer), userInfo: nil, repeats: true)
+
+    if let timer = iconUpdateTimer {
+      RunLoop.main.add(timer, forMode: .common)
+      NSLog("Icon update timer scheduled for midnight: \(midnight)")
+    }
+  }
+
+  @objc func updateTrayIconTimer() {
+    updateTrayIcon()
   }
 
   func setupMainMenu() {
@@ -319,7 +420,7 @@ import FlutterMacOS
       defer: false
     )
 
-    settingsWindow.title = "App Settings"
+    settingsWindow.title = "偏好设置"
     settingsWindow.center()
     settingsWindow.isReleasedWhenClosed = false
 
@@ -328,7 +429,7 @@ import FlutterMacOS
     settingsWindow.contentView = contentView
 
     // Create checkbox for Sunday first column
-    let checkbox = NSButton(checkboxWithTitle: "Start week on Sunday", target: self, action: #selector(sundayFirstChanged(_:)))
+    let checkbox = NSButton(checkboxWithTitle: "从周日开始", target: self, action: #selector(sundayFirstChanged(_:)))
     checkbox.frame = NSRect(x: 20, y: 120, width: 200, height: 20)
 
     // Load current setting
@@ -338,25 +439,11 @@ import FlutterMacOS
     contentView.addSubview(checkbox)
 
     // Create explanatory label
-    let label = NSTextField(labelWithString: "Choose whether the calendar week starts on Sunday or Monday.")
+    let label = NSTextField(labelWithString: "每周从周日还是周一开始")
     label.frame = NSRect(x: 20, y: 90, width: 360, height: 20)
     label.font = NSFont.systemFont(ofSize: 12)
     label.textColor = .secondaryLabelColor
     contentView.addSubview(label)
-
-    // Create OK button
-    let okButton = NSButton(title: "OK", target: self, action: #selector(closeSettingsWindow(_:)))
-    okButton.frame = NSRect(x: 310, y: 20, width: 70, height: 30)
-    okButton.bezelStyle = .rounded
-    okButton.keyEquivalent = "\r"
-    contentView.addSubview(okButton)
-
-    // Create Cancel button
-    let cancelButton = NSButton(title: "Cancel", target: self, action: #selector(closeSettingsWindow(_:)))
-    cancelButton.frame = NSRect(x: 230, y: 20, width: 70, height: 30)
-    cancelButton.bezelStyle = .rounded
-    cancelButton.keyEquivalent = "\u{1b}" // Escape key
-    contentView.addSubview(cancelButton)
 
     // Store reference to window for closing
     self.settingsWindow = settingsWindow
