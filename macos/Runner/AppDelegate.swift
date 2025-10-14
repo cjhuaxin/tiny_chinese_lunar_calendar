@@ -10,6 +10,8 @@ import FlutterMacOS
   var eventMonitor: Any?
   var contextMenu: NSMenu?
   var settingsWindow: NSWindow?
+  var settingsEventMonitor: Any?
+
 
   override func applicationWillFinishLaunching(_ notification: Notification) {
     super.applicationWillFinishLaunching(notification)
@@ -21,6 +23,7 @@ import FlutterMacOS
 
     // 立即创建状态栏项目
     setupStatusBar()
+    setupMainMenu()
 
     // 延迟获取窗口引用并确保隐藏
     DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
@@ -47,7 +50,7 @@ import FlutterMacOS
 
     let channel = FlutterMethodChannel(name: "calendar_settings", binaryMessenger: flutterViewController.engine.binaryMessenger)
 
-    channel.setMethodCallHandler { [weak self] (call, result) in
+    channel.setMethodCallHandler { (call, result) in
       switch call.method {
       case "getSettings":
         let sundayFirst = UserDefaults.standard.bool(forKey: "SundayFirstColumn")
@@ -96,7 +99,7 @@ import FlutterMacOS
     contextMenu = NSMenu()
 
     // App Settings menu item
-    let settingsItem = NSMenuItem(title: "App Settings...", action: #selector(showAppSettings), keyEquivalent: "")
+    let settingsItem = NSMenuItem(title: "Settings...", action: #selector(showAppSettings), keyEquivalent: ",")
     settingsItem.target = self
     contextMenu?.addItem(settingsItem)
 
@@ -117,6 +120,24 @@ import FlutterMacOS
     contextMenu?.addItem(quitItem)
   }
 
+  func setupMainMenu() {
+    // The application menu is connected via an @IBOutlet from the MainMenu.xib
+    guard let appMenu = applicationMenu else {
+        NSLog("Application menu outlet not connected.")
+        return
+    }
+
+    // Find the "Preferences..." menu item, update its title, and connect it to our action.
+    if let settingsItem = appMenu.item(withTitle: "Preferences…") {
+      settingsItem.title = "Settings..."
+      settingsItem.target = self
+      settingsItem.action = #selector(showPreferences(_:))
+      NSLog("System Settings menu item updated and connected.")
+    } else {
+        NSLog("Could not find 'Preferences...' menu item to update.")
+    }
+  }
+
   @objc func statusBarButtonClicked() {
     NSLog("Status bar button clicked")
 
@@ -127,7 +148,11 @@ import FlutterMacOS
 
     // Check if it's a right-click
     if event.type == .rightMouseUp {
-      NSLog("Right-click detected, showing context menu")
+      NSLog("Right-click detected")
+      // 如果窗口可见，则先隐藏
+      if isWindowVisible {
+        hideMainWindow()
+      }
       showContextMenu()
     } else {
       NSLog("Left-click detected, toggling window")
@@ -148,9 +173,25 @@ import FlutterMacOS
       return
     }
 
+    // Update menu item states before showing
+    updateMenuItemStates()
+
     statusItem.menu = menu
     button.performClick(nil)
     statusItem.menu = nil
+  }
+
+  func updateMenuItemStates() {
+    guard let menu = contextMenu else { return }
+
+    // Find the settings menu item and update its enabled state
+    for item in menu.items {
+      if item.action == #selector(showAppSettings) {
+        // Settings should be enabled when calendar window is visible
+        item.isEnabled = isWindowVisible
+        break
+      }
+    }
   }
 
   func hideMainWindow() {
@@ -321,6 +362,9 @@ import FlutterMacOS
     self.settingsWindow = settingsWindow
     settingsWindow.makeKeyAndOrderFront(nil)
     NSApp.activate(ignoringOtherApps: true)
+
+    // Add click-outside-to-close functionality
+    setupSettingsWindowClickOutsideHandler()
   }
 
   @objc func sundayFirstChanged(_ sender: NSButton) {
@@ -335,26 +379,62 @@ import FlutterMacOS
     }
   }
 
-  @objc func closeSettingsWindow(_ sender: NSButton) {
+  func setupSettingsWindowClickOutsideHandler() {
+    // Remove previous monitor if exists
+    if let monitor = settingsEventMonitor {
+      NSEvent.removeMonitor(monitor)
+    }
+
+    // Monitor global mouse clicks
+    settingsEventMonitor = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseDown) { [weak self] event in
+      guard let self = self, let settingsWindow = self.settingsWindow else { return }
+
+      // Get click location in screen coordinates
+      let clickLocation = NSEvent.mouseLocation
+      let windowFrame = settingsWindow.frame
+
+      // If click is outside settings window, close it
+      if !windowFrame.contains(clickLocation) {
+        self.closeSettingsWindow()
+      }
+    }
+  }
+
+  @objc func closeSettingsWindow(_ sender: NSButton? = nil) {
+    // Remove event monitor
+    if let monitor = settingsEventMonitor {
+      NSEvent.removeMonitor(monitor)
+      settingsEventMonitor = nil
+    }
+
     settingsWindow?.close()
     settingsWindow = nil
   }
 
   @objc func showAbout() {
     NSLog("About menu item clicked")
-    // TODO: Implement about dialog
 
-    let alert = NSAlert()
-    alert.messageText = "About Tiny Chinese Lunar Calendar"
-    alert.informativeText = "A compact lunar calendar application for macOS.\n\nVersion 1.0\nBuilt with Flutter"
-    alert.alertStyle = .informational
-    alert.addButton(withTitle: "OK")
-    alert.runModal()
+    // Use the system's standard about panel for consistency
+    let options: [NSApplication.AboutPanelOptionKey: Any] = [
+      .applicationName: "Tiny Chinese Lunar Calendar",
+      .applicationVersion: "1.0",
+      .version: "Build 1.0.0",
+      NSApplication.AboutPanelOptionKey(rawValue: "Copyright"): "© 2024 Tiny Chinese Lunar Calendar",
+      .credits: NSAttributedString(string: "A compact lunar calendar application for macOS.\n\nBuilt with Flutter and Swift."),
+      .applicationIcon: (NSApp.applicationIconImage ?? NSImage(named: "AppIcon")) as Any
+    ]
+
+    NSApp.orderFrontStandardAboutPanel(options: options)
   }
 
   @objc func quitApplication() {
     NSLog("Quit menu item clicked")
     NSApplication.shared.terminate(nil)
+  }
+
+  @IBAction func showPreferences(_ sender: Any?) {
+    NSLog("System Preferences menu item clicked")
+    showAppSettings()
   }
 
   override func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
