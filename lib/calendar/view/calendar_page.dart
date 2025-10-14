@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:lunar/lunar.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -36,11 +37,44 @@ class CalendarView extends StatefulWidget {
 class _CalendarViewState extends State<CalendarView> {
   DateTime? _selectedDay;
   late DateTime _focusedDay;
+  bool _sundayFirst = false;
+  static const MethodChannel _channel = MethodChannel('calendar_settings');
 
   @override
   void initState() {
     super.initState();
     _focusedDay = widget.initialFocusedDay ?? DateTime.now();
+    _loadSettings();
+    _setupMethodChannel();
+  }
+
+  void _loadSettings() {
+    // Load the Sunday first setting from native preferences
+    // This will be synced with the native UserDefaults
+    _channel
+        .invokeMethod('getSettings')
+        .then((result) {
+          if (result != null && result is Map) {
+            setState(() {
+              _sundayFirst = (result['sundayFirst'] as bool?) ?? false;
+            });
+          }
+        })
+        .catchError((Object error) {
+          // If method channel fails, use default value
+          debugPrint('Failed to load settings: $error');
+        });
+  }
+
+  void _setupMethodChannel() {
+    _channel.setMethodCallHandler((call) async {
+      if (call.method == 'settingsChanged') {
+        final arguments = call.arguments as Map<dynamic, dynamic>;
+        setState(() {
+          _sundayFirst = (arguments['sundayFirst'] as bool?) ?? false;
+        });
+      }
+    });
   }
 
   /// 构建非当月日期单元格，同时显示公历和农历日期
@@ -538,7 +572,9 @@ class _CalendarViewState extends State<CalendarView> {
                         color: Colors.red, // 周末星期标题使用红色
                       ),
                     ),
-                    startingDayOfWeek: StartingDayOfWeek.monday,
+                    startingDayOfWeek: _sundayFirst
+                        ? StartingDayOfWeek.sunday
+                        : StartingDayOfWeek.monday,
                     calendarBuilders: CalendarBuilders(
                       headerTitleBuilder: (context, day) {
                         final locale = Localizations.localeOf(context);

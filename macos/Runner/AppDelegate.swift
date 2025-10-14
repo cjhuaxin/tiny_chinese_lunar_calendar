@@ -8,6 +8,8 @@ import FlutterMacOS
   var mainWindow: NSWindow?
   var isWindowVisible = false
   var eventMonitor: Any?
+  var contextMenu: NSMenu?
+  var settingsWindow: NSWindow?
 
   override func applicationWillFinishLaunching(_ notification: Notification) {
     super.applicationWillFinishLaunching(notification)
@@ -28,10 +30,34 @@ import FlutterMacOS
         window.orderOut(nil)  // 立即隐藏，不显示动画
         self.isWindowVisible = false
         NSLog("Main window found and hidden immediately")
+
+        // Setup method channel after window is available
+        self.setupMethodChannel()
       } else {
         NSLog("No main window found")
       }
     }
+  }
+
+  func setupMethodChannel() {
+    guard let flutterViewController = mainWindow?.contentViewController as? FlutterViewController else {
+      NSLog("Failed to get FlutterViewController for method channel setup")
+      return
+    }
+
+    let channel = FlutterMethodChannel(name: "calendar_settings", binaryMessenger: flutterViewController.engine.binaryMessenger)
+
+    channel.setMethodCallHandler { [weak self] (call, result) in
+      switch call.method {
+      case "getSettings":
+        let sundayFirst = UserDefaults.standard.bool(forKey: "SundayFirstColumn")
+        result(["sundayFirst": sundayFirst])
+      default:
+        result(FlutterMethodNotImplemented)
+      }
+    }
+
+    NSLog("Method channel setup completed")
   }
 
   func setupStatusBar() {
@@ -55,20 +81,76 @@ import FlutterMacOS
     button.target = self
     button.toolTip = "Tiny Chinese Lunar Calendar - Click to show/hide"
 
+    // 设置右键菜单
+    button.sendAction(on: [.leftMouseUp, .rightMouseUp])
+
     // 强制显示
     statusItem.isVisible = true
 
+    // 创建右键菜单
+    setupContextMenu()
+
     NSLog("Status bar item created with calendar icon")
   }
+  func setupContextMenu() {
+    contextMenu = NSMenu()
+
+    // App Settings menu item
+    let settingsItem = NSMenuItem(title: "App Settings...", action: #selector(showAppSettings), keyEquivalent: "")
+    settingsItem.target = self
+    contextMenu?.addItem(settingsItem)
+
+    // Separator
+    contextMenu?.addItem(NSMenuItem.separator())
+
+    // About menu item
+    let aboutItem = NSMenuItem(title: "About Tiny Chinese Lunar Calendar", action: #selector(showAbout), keyEquivalent: "")
+    aboutItem.target = self
+    contextMenu?.addItem(aboutItem)
+
+    // Separator
+    contextMenu?.addItem(NSMenuItem.separator())
+
+    // Quit menu item
+    let quitItem = NSMenuItem(title: "Quit", action: #selector(quitApplication), keyEquivalent: "q")
+    quitItem.target = self
+    contextMenu?.addItem(quitItem)
+  }
+
   @objc func statusBarButtonClicked() {
     NSLog("Status bar button clicked")
 
-    // 切换窗口显示状态
-    if isWindowVisible {
-      hideMainWindow()
-    } else {
-      showMainWindow()
+    guard let event = NSApp.currentEvent else {
+      NSLog("No current event found")
+      return
     }
+
+    // Check if it's a right-click
+    if event.type == .rightMouseUp {
+      NSLog("Right-click detected, showing context menu")
+      showContextMenu()
+    } else {
+      NSLog("Left-click detected, toggling window")
+      // 切换窗口显示状态
+      if isWindowVisible {
+        hideMainWindow()
+      } else {
+        showMainWindow()
+      }
+    }
+  }
+
+  func showContextMenu() {
+    guard let statusItem = statusItem,
+          let button = statusItem.button,
+          let menu = contextMenu else {
+      NSLog("Failed to get components for context menu")
+      return
+    }
+
+    statusItem.menu = menu
+    button.performClick(nil)
+    statusItem.menu = nil
   }
 
   func hideMainWindow() {
@@ -183,6 +265,97 @@ import FlutterMacOS
     }
   }
 
+  // MARK: - Context Menu Actions
+
+  @objc func showAppSettings() {
+    NSLog("App Settings menu item clicked")
+
+    // Create settings window
+    let settingsWindow = NSWindow(
+      contentRect: NSRect(x: 0, y: 0, width: 400, height: 200),
+      styleMask: [.titled, .closable],
+      backing: .buffered,
+      defer: false
+    )
+
+    settingsWindow.title = "App Settings"
+    settingsWindow.center()
+    settingsWindow.isReleasedWhenClosed = false
+
+    // Create content view
+    let contentView = NSView(frame: settingsWindow.contentRect(forFrameRect: settingsWindow.frame))
+    settingsWindow.contentView = contentView
+
+    // Create checkbox for Sunday first column
+    let checkbox = NSButton(checkboxWithTitle: "Start week on Sunday", target: self, action: #selector(sundayFirstChanged(_:)))
+    checkbox.frame = NSRect(x: 20, y: 120, width: 200, height: 20)
+
+    // Load current setting
+    let sundayFirst = UserDefaults.standard.bool(forKey: "SundayFirstColumn")
+    checkbox.state = sundayFirst ? .on : .off
+
+    contentView.addSubview(checkbox)
+
+    // Create explanatory label
+    let label = NSTextField(labelWithString: "Choose whether the calendar week starts on Sunday or Monday.")
+    label.frame = NSRect(x: 20, y: 90, width: 360, height: 20)
+    label.font = NSFont.systemFont(ofSize: 12)
+    label.textColor = .secondaryLabelColor
+    contentView.addSubview(label)
+
+    // Create OK button
+    let okButton = NSButton(title: "OK", target: self, action: #selector(closeSettingsWindow(_:)))
+    okButton.frame = NSRect(x: 310, y: 20, width: 70, height: 30)
+    okButton.bezelStyle = .rounded
+    okButton.keyEquivalent = "\r"
+    contentView.addSubview(okButton)
+
+    // Create Cancel button
+    let cancelButton = NSButton(title: "Cancel", target: self, action: #selector(closeSettingsWindow(_:)))
+    cancelButton.frame = NSRect(x: 230, y: 20, width: 70, height: 30)
+    cancelButton.bezelStyle = .rounded
+    cancelButton.keyEquivalent = "\u{1b}" // Escape key
+    contentView.addSubview(cancelButton)
+
+    // Store reference to window for closing
+    self.settingsWindow = settingsWindow
+    settingsWindow.makeKeyAndOrderFront(nil)
+    NSApp.activate(ignoringOtherApps: true)
+  }
+
+  @objc func sundayFirstChanged(_ sender: NSButton) {
+    let sundayFirst = sender.state == .on
+    UserDefaults.standard.set(sundayFirst, forKey: "SundayFirstColumn")
+    NSLog("Sunday first column setting changed to: \(sundayFirst)")
+
+    // Notify Flutter about the setting change
+    if let flutterViewController = mainWindow?.contentViewController as? FlutterViewController {
+      let channel = FlutterMethodChannel(name: "calendar_settings", binaryMessenger: flutterViewController.engine.binaryMessenger)
+      channel.invokeMethod("settingsChanged", arguments: ["sundayFirst": sundayFirst])
+    }
+  }
+
+  @objc func closeSettingsWindow(_ sender: NSButton) {
+    settingsWindow?.close()
+    settingsWindow = nil
+  }
+
+  @objc func showAbout() {
+    NSLog("About menu item clicked")
+    // TODO: Implement about dialog
+
+    let alert = NSAlert()
+    alert.messageText = "About Tiny Chinese Lunar Calendar"
+    alert.informativeText = "A compact lunar calendar application for macOS.\n\nVersion 1.0\nBuilt with Flutter"
+    alert.alertStyle = .informational
+    alert.addButton(withTitle: "OK")
+    alert.runModal()
+  }
+
+  @objc func quitApplication() {
+    NSLog("Quit menu item clicked")
+    NSApplication.shared.terminate(nil)
+  }
 
   override func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
     return false  // 不要在窗口关闭时退出应用
