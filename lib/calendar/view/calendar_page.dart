@@ -86,17 +86,14 @@ class _CalendarViewState extends State<CalendarView> {
     double? availableRowHeight,
   }) {
     final lunarDate = Lunar.fromDate(day);
+    final solarDate = Solar.fromDate(day);
     final isWeekend =
         day.weekday == DateTime.saturday || day.weekday == DateTime.sunday;
 
-    // 获取节气和节日信息
-    final lunarFestivals = lunarDate.getFestivals();
-    final jieQi = lunarDate.getJieQi();
-    final hasSpecialText = lunarFestivals.isNotEmpty || jieQi.isNotEmpty;
+    // Festival information will be handled in _getLunarTextColor method
 
     Color? backgroundColor;
     Color? textColor;
-    Color? lunarTextColor;
     EdgeInsets margin;
     EdgeInsets padding;
     double borderRadius;
@@ -114,10 +111,7 @@ class _CalendarViewState extends State<CalendarView> {
     } else {
       textColor = Colors.grey[400]; // 非当月日期使用灰色
     }
-    // 农历文字保持原有的灰色样式，但如果是节气或节日则使用红色
-    lunarTextColor = hasSpecialText
-        ? Colors.red.withValues(alpha: 0.4)
-        : Colors.grey[400];
+    // lunarTextColor is now handled below, after lunarText is calculated
     margin = EdgeInsets.zero;
     padding = EdgeInsets.symmetric(
       horizontal: dynamicPadding,
@@ -152,7 +146,15 @@ class _CalendarViewState extends State<CalendarView> {
         (availableRowHeight == null || availableRowHeight > 30) &&
         primaryFontSize >= 8.0; // 确保主字体足够大时才显示农历
 
-    final lunarText = _getLunarText(lunarDate);
+    final lunarText = _getLunarText(lunarDate, solarDate);
+
+    // Calculate lunar text color based on content type
+    final calculatedLunarTextColor = _getLunarTextColor(
+      lunarText,
+      lunarDate,
+      solarDate,
+      defaultColor: Colors.grey[400],
+    );
 
     return Container(
       margin: margin,
@@ -191,7 +193,7 @@ class _CalendarViewState extends State<CalendarView> {
                     lunarText,
                     style: TextStyle(
                       fontSize: secondaryFontSize,
-                      color: lunarTextColor?.withValues(alpha: 0.7), // 农历文字保持灰色
+                      color: calculatedLunarTextColor?.withValues(alpha: 0.7),
                       height: 1,
                     ),
                   ),
@@ -212,17 +214,14 @@ class _CalendarViewState extends State<CalendarView> {
     double? availableRowHeight,
   }) {
     final lunarDate = Lunar.fromDate(day);
+    final solarDate = Solar.fromDate(day);
     final isWeekend =
         day.weekday == DateTime.saturday || day.weekday == DateTime.sunday;
 
-    // 获取节气和节日信息
-    final lunarFestivals = lunarDate.getFestivals();
-    final jieQi = lunarDate.getJieQi();
-    final hasSpecialText = lunarFestivals.isNotEmpty || jieQi.isNotEmpty;
+    // 获取节气和节日信息 - variables will be used in _getLunarTextColor method
 
     Color? backgroundColor;
     Color? textColor;
-    Color? lunarTextColor;
     EdgeInsets margin;
     EdgeInsets padding;
     double borderRadius;
@@ -237,7 +236,7 @@ class _CalendarViewState extends State<CalendarView> {
       // - filled background with border
       backgroundColor = Theme.of(context).primaryColor;
       textColor = Colors.white;
-      lunarTextColor = hasSpecialText ? Colors.red : Colors.white;
+      // lunarTextColor is now handled after lunarText is calculated
       // Add horizontal margin to create narrower, more proportioned highlight
       final horizontalMargin = (cellSize * 0.12).clamp(3.0, 8.0);
       margin = EdgeInsets.symmetric(horizontal: horizontalMargin);
@@ -261,7 +260,7 @@ class _CalendarViewState extends State<CalendarView> {
       } else {
         textColor = null;
       }
-      lunarTextColor = hasSpecialText ? Colors.red : null;
+      // lunarTextColor is now handled after lunarText is calculated
       // Add horizontal margin to create narrower, more proportioned highlight
       final horizontalMargin = (cellSize * 0.12).clamp(3.0, 8.0);
       margin = EdgeInsets.symmetric(horizontal: horizontalMargin);
@@ -275,7 +274,7 @@ class _CalendarViewState extends State<CalendarView> {
       // Today: use the old selected style (filled background)
       backgroundColor = Theme.of(context).primaryColor;
       textColor = Colors.white;
-      lunarTextColor = hasSpecialText ? Colors.red : Colors.white;
+      // lunarTextColor is now handled after lunarText is calculated
       // Add horizontal margin to create narrower, more proportioned highlight
       final horizontalMargin = (cellSize * 0.12).clamp(3.0, 8.0);
       margin = EdgeInsets.symmetric(horizontal: horizontalMargin);
@@ -299,8 +298,7 @@ class _CalendarViewState extends State<CalendarView> {
       } else {
         textColor = null;
       }
-      // 农历文字保持原有样式，但如果是节气或节日则使用红色
-      lunarTextColor = hasSpecialText ? Colors.red : null;
+      // lunarTextColor is now handled after lunarText is calculated
       margin = EdgeInsets.zero;
       padding = EdgeInsets.symmetric(
         horizontal: dynamicPadding,
@@ -336,7 +334,17 @@ class _CalendarViewState extends State<CalendarView> {
         (availableRowHeight == null || availableRowHeight > 30) &&
         primaryFontSize >= 8.0; // 确保主字体足够大时才显示农历
 
-    final lunarText = _getLunarText(lunarDate);
+    final lunarText = _getLunarText(lunarDate, solarDate);
+
+    // Calculate lunar text color based on content type
+    final calculatedLunarTextColor = _getLunarTextColor(
+      lunarText,
+      lunarDate,
+      solarDate,
+      defaultColor: Theme.of(
+        context,
+      ).colorScheme.onSurface.withValues(alpha: 0.6),
+    );
 
     return Container(
       margin: margin,
@@ -381,11 +389,7 @@ class _CalendarViewState extends State<CalendarView> {
                     lunarText,
                     style: TextStyle(
                       fontSize: secondaryFontSize,
-                      color:
-                          lunarTextColor ??
-                          Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withValues(alpha: 0.6),
+                      color: calculatedLunarTextColor,
                       height: 1,
                     ),
                   ),
@@ -460,18 +464,64 @@ class _CalendarViewState extends State<CalendarView> {
     return false;
   }
 
-  String _getLunarText(Lunar lunarDate) {
-    final festivals = lunarDate.getFestivals();
-    if (festivals.isNotEmpty) {
-      return festivals.first;
+  String _getLunarText(Lunar lunarDate, Solar solarDate) {
+    // Priority hierarchy:
+    // lunarFestivals > jieQi > solarFestival > solarOtherFestival
+
+    // 1. Highest priority: Lunar festivals
+    final lunarFestivals = lunarDate.getFestivals();
+    if (lunarFestivals.isNotEmpty) {
+      return lunarFestivals.first;
     }
 
+    // 2. Second priority: Jie Qi (solar terms)
     final jieQi = lunarDate.getJieQi();
     if (jieQi.isNotEmpty) {
       return jieQi;
     }
 
+    // 3. Third priority: Solar festivals
+    final solarFestivals = solarDate.getFestivals();
+    final solarFestival = solarFestivals.isNotEmpty
+        ? solarFestivals.first
+        : null;
+    if (solarFestival != null && solarFestival.isNotEmpty) {
+      return solarFestival;
+    }
+
     return lunarDate.getDayInChinese();
+  }
+
+  /// Get the text color for lunar text based on content type
+  Color? _getLunarTextColor(
+    String lunarText,
+    Lunar lunarDate,
+    Solar solarDate, {
+    Color? defaultColor,
+  }) {
+    // Check if it's a lunar festival or jie qi (use red)
+    final lunarFestivals = lunarDate.getFestivals();
+    final jieQi = lunarDate.getJieQi();
+
+    if (lunarFestivals.isNotEmpty && lunarText == lunarFestivals.first) {
+      return Colors.red;
+    }
+
+    if (jieQi.isNotEmpty && lunarText == jieQi) {
+      return Colors.red;
+    }
+
+    // Check if it's a solar festival (use light blue)
+    final solarFestivals = solarDate.getFestivals();
+    final solarFestival = solarFestivals.isNotEmpty
+        ? solarFestivals.first
+        : null;
+    if (solarFestival != null && lunarText == solarFestival) {
+      return const Color(0xFF87CEEB); // Light blue color for solar festivals
+    }
+
+    // Solar other festivals use default color
+    return defaultColor;
   }
 
   @override
