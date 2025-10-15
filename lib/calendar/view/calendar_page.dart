@@ -89,9 +89,10 @@ class _CalendarViewState extends State<CalendarView> {
     final isWeekend =
         day.weekday == DateTime.saturday || day.weekday == DateTime.sunday;
 
-    // 获取节气信息，如果有节气则使用节气，否则使用农历日期
+    // 获取节气和节日信息
+    final lunarFestivals = lunarDate.getFestivals();
     final jieQi = lunarDate.getJieQi();
-    final isJieQi = jieQi.isNotEmpty;
+    final hasSpecialText = lunarFestivals.isNotEmpty || jieQi.isNotEmpty;
 
     Color? backgroundColor;
     Color? textColor;
@@ -113,8 +114,8 @@ class _CalendarViewState extends State<CalendarView> {
     } else {
       textColor = Colors.grey[400]; // 非当月日期使用灰色
     }
-    // 农历文字保持原有的灰色样式，但如果是节气则使用红色
-    lunarTextColor = isJieQi
+    // 农历文字保持原有的灰色样式，但如果是节气或节日则使用红色
+    lunarTextColor = hasSpecialText
         ? Colors.red.withValues(alpha: 0.4)
         : Colors.grey[400];
     margin = EdgeInsets.zero;
@@ -151,7 +152,7 @@ class _CalendarViewState extends State<CalendarView> {
         (availableRowHeight == null || availableRowHeight > 30) &&
         primaryFontSize >= 8.0; // 确保主字体足够大时才显示农历
 
-    final lunarText = jieQi.isNotEmpty ? jieQi : lunarDate.getDayInChinese();
+    final lunarText = _getLunarText(lunarDate);
 
     return Container(
       margin: margin,
@@ -214,9 +215,10 @@ class _CalendarViewState extends State<CalendarView> {
     final isWeekend =
         day.weekday == DateTime.saturday || day.weekday == DateTime.sunday;
 
-    // 获取节气信息，如果有节气则使用节气，否则使用农历日期
+    // 获取节气和节日信息
+    final lunarFestivals = lunarDate.getFestivals();
     final jieQi = lunarDate.getJieQi();
-    final isJieQi = jieQi.isNotEmpty;
+    final hasSpecialText = lunarFestivals.isNotEmpty || jieQi.isNotEmpty;
 
     Color? backgroundColor;
     Color? textColor;
@@ -235,7 +237,7 @@ class _CalendarViewState extends State<CalendarView> {
       // - filled background with border
       backgroundColor = Theme.of(context).primaryColor;
       textColor = Colors.white;
-      lunarTextColor = isJieQi ? Colors.red : Colors.white;
+      lunarTextColor = hasSpecialText ? Colors.red : Colors.white;
       // Add horizontal margin to create narrower, more proportioned highlight
       final horizontalMargin = (cellSize * 0.12).clamp(3.0, 8.0);
       margin = EdgeInsets.symmetric(horizontal: horizontalMargin);
@@ -259,7 +261,7 @@ class _CalendarViewState extends State<CalendarView> {
       } else {
         textColor = null;
       }
-      lunarTextColor = isJieQi ? Colors.red : null;
+      lunarTextColor = hasSpecialText ? Colors.red : null;
       // Add horizontal margin to create narrower, more proportioned highlight
       final horizontalMargin = (cellSize * 0.12).clamp(3.0, 8.0);
       margin = EdgeInsets.symmetric(horizontal: horizontalMargin);
@@ -273,7 +275,7 @@ class _CalendarViewState extends State<CalendarView> {
       // Today: use the old selected style (filled background)
       backgroundColor = Theme.of(context).primaryColor;
       textColor = Colors.white;
-      lunarTextColor = isJieQi ? Colors.red : Colors.white;
+      lunarTextColor = hasSpecialText ? Colors.red : Colors.white;
       // Add horizontal margin to create narrower, more proportioned highlight
       final horizontalMargin = (cellSize * 0.12).clamp(3.0, 8.0);
       margin = EdgeInsets.symmetric(horizontal: horizontalMargin);
@@ -297,8 +299,8 @@ class _CalendarViewState extends State<CalendarView> {
       } else {
         textColor = null;
       }
-      // 农历文字保持原有样式，但如果是节气则使用红色
-      lunarTextColor = isJieQi ? Colors.red : null;
+      // 农历文字保持原有样式，但如果是节气或节日则使用红色
+      lunarTextColor = hasSpecialText ? Colors.red : null;
       margin = EdgeInsets.zero;
       padding = EdgeInsets.symmetric(
         horizontal: dynamicPadding,
@@ -334,7 +336,7 @@ class _CalendarViewState extends State<CalendarView> {
         (availableRowHeight == null || availableRowHeight > 30) &&
         primaryFontSize >= 8.0; // 确保主字体足够大时才显示农历
 
-    final lunarText = jieQi.isNotEmpty ? jieQi : lunarDate.getDayInChinese();
+    final lunarText = _getLunarText(lunarDate);
 
     return Container(
       margin: margin,
@@ -456,6 +458,20 @@ class _CalendarViewState extends State<CalendarView> {
     }
 
     return false;
+  }
+
+  String _getLunarText(Lunar lunarDate) {
+    final festivals = lunarDate.getFestivals();
+    if (festivals.isNotEmpty) {
+      return festivals.first;
+    }
+
+    final jieQi = lunarDate.getJieQi();
+    if (jieQi.isNotEmpty) {
+      return jieQi;
+    }
+
+    return lunarDate.getDayInChinese();
   }
 
   @override
