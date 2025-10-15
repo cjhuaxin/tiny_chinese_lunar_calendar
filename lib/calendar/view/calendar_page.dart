@@ -181,6 +181,9 @@ class _CalendarViewState extends State<CalendarView> {
                     color: textColor,
                   ),
                 ),
+                // 添加垂直间距
+                if (showLunarText)
+                  SizedBox(height: (cellSize * 0.04).clamp(2.0, 4.0)),
                 // 农历日期 - 只在单元格足够大时显示
                 if (showLunarText)
                   Text(
@@ -367,6 +370,9 @@ class _CalendarViewState extends State<CalendarView> {
                     color: textColor,
                   ),
                 ),
+                // 添加垂直间距
+                if (showLunarText)
+                  SizedBox(height: (cellSize * 0.04).clamp(2.0, 4.0)),
                 // 农历日期 - 只在单元格足够大时显示
                 if (showLunarText)
                   Text(
@@ -391,22 +397,24 @@ class _CalendarViewState extends State<CalendarView> {
 
   /// 计算指定月份需要多少行来显示
   /// 返回值为5或6，表示该月份在日历中需要的行数
-  int _calculateRowsNeededForMonth(DateTime focusedDay) {
-    // 获取当月第一天
+  int _calculateRowsNeededForMonth(
+    DateTime focusedDay,
+    bool isSundayFirst,
+  ) {
     final firstDayOfMonth = DateTime(focusedDay.year, focusedDay.month);
-    // 获取当月最后一天
     final lastDayOfMonth = DateTime(focusedDay.year, focusedDay.month + 1, 0);
 
-    // 计算第一天是星期几（0=周一, 6=周日）
-    final firstDayWeekday = (firstDayOfMonth.weekday - 1) % 7;
+    int firstDayWeekday;
+    if (isSundayFirst) {
+      // If Sunday is the first day of the week, Sunday is 0, Saturday is 6
+      firstDayWeekday = firstDayOfMonth.weekday % 7;
+    } else {
+      // If Monday is the first day of the week, Monday is 0, Sunday is 6
+      firstDayWeekday = (firstDayOfMonth.weekday - 1) % 7;
+    }
 
-    // 计算当月总天数
     final daysInMonth = lastDayOfMonth.day;
-
-    // 计算需要的总格子数：前面填充的天数 + 当月天数
     final totalCells = firstDayWeekday + daysInMonth;
-
-    // 计算需要的行数（每行7天）
     final rowsNeeded = (totalCells / 7).ceil();
 
     return rowsNeeded;
@@ -484,7 +492,10 @@ class _CalendarViewState extends State<CalendarView> {
                   final availableHeight = constraints.maxHeight;
 
                   // 计算当前月份需要的行数以调整其他参数
-                  final rowsNeeded = _calculateRowsNeededForMonth(_focusedDay);
+                  final rowsNeeded = _calculateRowsNeededForMonth(
+                    _focusedDay,
+                    _sundayFirst,
+                  );
 
                   // 为500x450固定窗口优化的尺寸参数
                   // 使用更小的字体以确保有足够空间
