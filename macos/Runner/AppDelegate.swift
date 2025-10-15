@@ -11,8 +11,12 @@ import FlutterMacOS
   var contextMenu: NSMenu?
   var settingsWindow: NSWindow?
   var settingsEventMonitor: Any?
-  var iconUpdateTimer: Timer?
+  var dateChangeObserver: NSObjectProtocol?
+  var wakeObserver: NSObjectProtocol?
 
+  deinit {
+    removeObservers()
+  }
 
   override func applicationWillFinishLaunching(_ notification: Notification) {
     super.applicationWillFinishLaunching(notification)
@@ -95,8 +99,8 @@ import FlutterMacOS
 
     NSLog("Status bar item created with calendar icon")
 
-    // Setup timer to update icon daily
-    setupIconUpdateTimer()
+    // Setup date change observers for efficient updates
+    setupDateChangeObservers()
   }
   func setupContextMenu() {
     contextMenu = NSMenu()
@@ -201,24 +205,42 @@ import FlutterMacOS
     return image
   }
 
-  func setupIconUpdateTimer() {
-    // Calculate time until next midnight
-    let calendar = Calendar.current
-    let now = Date()
-    let tomorrow = calendar.date(byAdding: .day, value: 1, to: now)!
-    let midnight = calendar.startOfDay(for: tomorrow)
-
-    // Create timer to fire at midnight
-    iconUpdateTimer = Timer(fireAt: midnight, interval: 24 * 60 * 60, target: self, selector: #selector(updateTrayIconTimer), userInfo: nil, repeats: true)
-
-    if let timer = iconUpdateTimer {
-      RunLoop.main.add(timer, forMode: .common)
-      NSLog("Icon update timer scheduled for midnight: \(midnight)")
+  func setupDateChangeObservers() {
+    // Observer for system clock changes (including date changes)
+    dateChangeObserver = NotificationCenter.default.addObserver(
+      forName: .NSSystemClockDidChange,
+      object: nil,
+      queue: .main
+    ) { [weak self] _ in
+      NSLog("System clock changed - updating tray icon")
+      self?.updateTrayIcon()
     }
+
+    // Observer for system wake from sleep
+    wakeObserver = NotificationCenter.default.addObserver(
+      forName: NSWorkspace.didWakeNotification,
+      object: nil,
+      queue: .main
+    ) { [weak self] _ in
+      NSLog("System woke from sleep - updating tray icon")
+      self?.updateTrayIcon()
+    }
+
+    NSLog("Date change observers setup completed")
   }
 
-  @objc func updateTrayIconTimer() {
-    updateTrayIcon()
+  func removeObservers() {
+    if let observer = dateChangeObserver {
+      NotificationCenter.default.removeObserver(observer)
+      dateChangeObserver = nil
+    }
+
+    if let observer = wakeObserver {
+      NotificationCenter.default.removeObserver(observer)
+      wakeObserver = nil
+    }
+
+    NSLog("Date change observers removed")
   }
 
   func setupMainMenu() {
@@ -516,6 +538,7 @@ import FlutterMacOS
 
   @objc func quitApplication() {
     NSLog("Quit menu item clicked")
+    removeObservers()
     NSApplication.shared.terminate(nil)
   }
 
