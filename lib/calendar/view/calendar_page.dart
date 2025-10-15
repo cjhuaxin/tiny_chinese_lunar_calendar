@@ -398,7 +398,7 @@ class _CalendarViewState extends State<CalendarView> {
   }
 
   /// 计算指定月份需要多少行来显示
-  /// 返回值为5或6，表示该月份在日历中需要的行数
+  /// 返回值为4、5或6，表示该月份在日历中需要的行数
   int _calculateRowsNeededForMonth(
     DateTime focusedDay,
     bool isSundayFirst,
@@ -535,7 +535,15 @@ class _CalendarViewState extends State<CalendarView> {
                   // 计算日期行可用的剩余高度
                   // 从总高度中减去：月份标题高度 + 星期标题高度 + 底部安全边距
                   // 关键：必须留出足够的底部边距，确保最后一行完全可见
-                  final bottomSafetyMargin = rowsNeeded == 6 ? 30.0 : 25.0;
+                  // 动态调整底部边距：4行月份可以使用更小的边距以更好地填充空间
+                  final double bottomSafetyMargin;
+                  if (rowsNeeded == 6) {
+                    bottomSafetyMargin = 30.0; // 6行需要更多边距
+                  } else if (rowsNeeded == 5) {
+                    bottomSafetyMargin = 25.0; // 5行使用标准边距
+                  } else {
+                    bottomSafetyMargin = 20.0; // 4行使用更小边距以更好填充空间
+                  }
                   final remainingHeight =
                       availableHeight -
                       calendarHeaderHeight -
@@ -544,14 +552,17 @@ class _CalendarViewState extends State<CalendarView> {
 
                   // 根据实际需要的行数动态调整行高
                   // 关键：严格控制行高，确保所有行都完全可见
-                  // 使用更紧凑的行高，减少行间距
+                  // 动态调整行高以充分利用可用空间，避免底部空白过多
                   final double rowHeight;
                   if (rowsNeeded == 6) {
                     // 6行月份：使用紧凑的行高，确保第6行完全可见
                     rowHeight = (remainingHeight / 6.0).clamp(40.0, 52.0);
-                  } else {
+                  } else if (rowsNeeded == 5) {
                     // 5行月份：使用稍紧凑的行高
                     rowHeight = (remainingHeight / 5.0).clamp(45.0, 60.0);
+                  } else {
+                    // 4行月份：增加行高以充分利用可用空间，避免底部空白过多
+                    rowHeight = (remainingHeight / 4.0).clamp(50.0, 75.0);
                   }
 
                   // 计算单元格大小用于动态样式
