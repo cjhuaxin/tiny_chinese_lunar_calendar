@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import 'package:lunar/lunar.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:tiny_chinese_lunar_calendar/app/theme/app_theme.dart';
+import 'package:tiny_chinese_lunar_calendar/calendar/utils/holiday_helper.dart';
+import 'package:tiny_chinese_lunar_calendar/calendar/widgets/holiday_tag.dart';
 import 'package:tiny_chinese_lunar_calendar/l10n/l10n.dart';
 
 class CalendarPage extends StatelessWidget {
@@ -172,34 +174,53 @@ class _CalendarViewState extends State<CalendarView> {
               borderRadius: BorderRadius.circular(borderRadius),
               boxShadow: boxShadow,
             ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
+            child: Stack(
               children: [
-                // 公历日期
-                Text(
-                  '${day.day}',
-                  style: TextStyle(
-                    fontSize: primaryFontSize,
-                    fontWeight: FontWeight.w500,
-                    color: textColor,
+                // Main content - date and lunar text
+                Positioned.fill(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // 公历日期
+                      Text(
+                        '${day.day}',
+                        style: TextStyle(
+                          fontSize: primaryFontSize,
+                          fontWeight: FontWeight.w500,
+                          color: textColor,
+                        ),
+                      ),
+                      // 添加垂直间距
+                      if (showLunarText)
+                        SizedBox(height: (cellSize * 0.04).clamp(2.0, 4.0)),
+                      // 农历日期 - 只在单元格足够大时显示
+                      if (showLunarText)
+                        Text(
+                          lunarText,
+                          style: TextStyle(
+                            fontSize: secondaryFontSize,
+                            color: calculatedLunarTextColor?.withValues(
+                              alpha: 0.7,
+                            ),
+                            height: 1,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                          softWrap: false,
+                        ),
+                    ],
                   ),
                 ),
-                // 添加垂直间距
-                if (showLunarText)
-                  SizedBox(height: (cellSize * 0.04).clamp(2.0, 4.0)),
-                // 农历日期 - 只在单元格足够大时显示
-                if (showLunarText)
-                  Text(
-                    lunarText,
-                    style: TextStyle(
-                      fontSize: secondaryFontSize,
-                      color: calculatedLunarTextColor?.withValues(alpha: 0.7),
-                      height: 1,
+                // Holiday tag as floating overlay in top-right corner
+                if (HolidayHelper.hasHolidayInfo(day))
+                  Positioned(
+                    top: 2,
+                    right: 2,
+                    child: HolidayTag(
+                      isWorkDay: HolidayHelper.isWorkDay(day) ?? false,
+                      size: (cellSize * 0.25).clamp(12.0, 18.0),
                     ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                    softWrap: false,
                   ),
               ],
             ),
@@ -377,34 +398,51 @@ class _CalendarViewState extends State<CalendarView> {
                   : null,
               boxShadow: boxShadow,
             ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
+            child: Stack(
               children: [
-                // 公历日期
-                Text(
-                  '${day.day}',
-                  style: TextStyle(
-                    fontSize: primaryFontSize,
-                    fontWeight: FontWeight.w500,
-                    color: textColor,
+                // Main content - date and lunar text
+                Positioned.fill(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // 公历日期
+                      Text(
+                        '${day.day}',
+                        style: TextStyle(
+                          fontSize: primaryFontSize,
+                          fontWeight: FontWeight.w500,
+                          color: textColor,
+                        ),
+                      ),
+                      // 添加垂直间距
+                      if (showLunarText)
+                        SizedBox(height: (cellSize * 0.04).clamp(2.0, 4.0)),
+                      // 农历日期 - 只在单元格足够大时显示
+                      if (showLunarText)
+                        Text(
+                          lunarText,
+                          style: TextStyle(
+                            fontSize: secondaryFontSize,
+                            color: calculatedLunarTextColor,
+                            height: 1,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                          softWrap: false,
+                        ),
+                    ],
                   ),
                 ),
-                // 添加垂直间距
-                if (showLunarText)
-                  SizedBox(height: (cellSize * 0.04).clamp(2.0, 4.0)),
-                // 农历日期 - 只在单元格足够大时显示
-                if (showLunarText)
-                  Text(
-                    lunarText,
-                    style: TextStyle(
-                      fontSize: secondaryFontSize,
-                      color: calculatedLunarTextColor,
-                      height: 1,
+                // Holiday tag as floating overlay in top-right corner
+                if (HolidayHelper.hasHolidayInfo(day))
+                  Positioned(
+                    top: 2,
+                    right: 2,
+                    child: HolidayTag(
+                      isWorkDay: HolidayHelper.isWorkDay(day) ?? false,
+                      size: (cellSize * 0.25).clamp(12.0, 18.0),
                     ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                    softWrap: false,
                   ),
               ],
             ),
