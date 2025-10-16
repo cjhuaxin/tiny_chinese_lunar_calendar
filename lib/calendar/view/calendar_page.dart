@@ -256,15 +256,20 @@ class _CalendarViewState extends State<CalendarView> {
     final dynamicPadding = (cellSize * 0.08).clamp(2.0, 8.0);
     final dynamicBorderRadius = (cellSize * 0.15).clamp(4.0, 16.0);
 
-    if (isSelected && isToday) {
-      // When today is selected: combine both styles
-      // - filled background with border
+    // 单元格之间距离(决定了背景的大小)
+    final horizontalMargin = (cellSize * 0.08).clamp(3.0, 8.0);
+    final verticalMargin = (cellSize * 0.05).clamp(3.0, 8.0);
+    margin = EdgeInsets.symmetric(
+      horizontal: horizontalMargin,
+      vertical: verticalMargin,
+    );
+    // margin = EdgeInsets.zero;
+    if (isToday) {
+      // Today: use the old selected style (filled background)
       backgroundColor = Theme.of(context).primaryColor;
       textColor = Colors.white;
       // lunarTextColor is now handled after lunarText is calculated
       // Add horizontal margin to create narrower, more proportioned highlight
-      final horizontalMargin = (cellSize * 0.12).clamp(3.0, 8.0);
-      margin = EdgeInsets.symmetric(horizontal: horizontalMargin);
       padding = EdgeInsets.symmetric(
         horizontal: dynamicPadding,
         vertical: dynamicPadding,
@@ -278,43 +283,20 @@ class _CalendarViewState extends State<CalendarView> {
         ),
       ];
     } else if (isSelected) {
-      // Selected day: red border only
-      backgroundColor = null;
+      // Selected day: light background color instead of border
+      backgroundColor = AppTheme.chineseRed.withValues(alpha: 0.1);
       if (isWeekend) {
         textColor = AppTheme.chineseRed;
       } else {
         textColor = null;
       }
-      // lunarTextColor is now handled after lunarText is calculated
-      // Add horizontal margin to create narrower, more proportioned highlight
-      final horizontalMargin = (cellSize * 0.12).clamp(3.0, 8.0);
-      margin = EdgeInsets.symmetric(horizontal: horizontalMargin);
+
       padding = EdgeInsets.symmetric(
         horizontal: dynamicPadding,
         vertical: dynamicPadding,
       );
       borderRadius = dynamicBorderRadius;
       boxShadow = null;
-    } else if (isToday) {
-      // Today: use the old selected style (filled background)
-      backgroundColor = Theme.of(context).primaryColor;
-      textColor = Colors.white;
-      // lunarTextColor is now handled after lunarText is calculated
-      // Add horizontal margin to create narrower, more proportioned highlight
-      final horizontalMargin = (cellSize * 0.12).clamp(3.0, 8.0);
-      margin = EdgeInsets.symmetric(horizontal: horizontalMargin);
-      padding = EdgeInsets.symmetric(
-        horizontal: dynamicPadding,
-        vertical: dynamicPadding,
-      );
-      borderRadius = dynamicBorderRadius;
-      // Add subtle shadow for better visual hierarchy - more refined
-      boxShadow = [
-        BoxShadow(
-          color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
-          blurRadius: 2,
-        ),
-      ];
     } else {
       backgroundColor = null;
       if (isWeekend) {
@@ -390,12 +372,6 @@ class _CalendarViewState extends State<CalendarView> {
             decoration: BoxDecoration(
               color: backgroundColor,
               borderRadius: BorderRadius.circular(borderRadius),
-              border: isSelected
-                  ? Border.all(
-                      color: AppTheme.chineseRed,
-                      width: 2,
-                    )
-                  : null,
               boxShadow: boxShadow,
             ),
             child: Stack(
