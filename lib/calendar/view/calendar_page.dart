@@ -95,33 +95,15 @@ class _CalendarViewState extends State<CalendarView> {
 
     // Festival information will be handled in _getLunarTextColor method
 
-    Color? backgroundColor;
     Color? textColor;
-    EdgeInsets margin;
-    EdgeInsets padding;
-    double borderRadius;
-    List<BoxShadow>? boxShadow;
-
-    // 根据单元格大小动态计算样式参数，更激进的缩放
-    final dynamicPadding = (cellSize * 0.08).clamp(2.0, 8.0);
-    final dynamicBorderRadius = (cellSize * 0.15).clamp(4.0, 16.0);
 
     // 非当月日期使用灰色文字，但保持相同的大小和布局
-    backgroundColor = null;
     if (isWeekend) {
       // 周末日期使用红色，但因为是非当月日期，所以使用较淡的红色
       textColor = AppTheme.chineseRed.withValues(alpha: 0.4);
     } else {
       textColor = Colors.grey[400]; // 非当月日期使用灰色
     }
-    // lunarTextColor is now handled below, after lunarText is calculated
-    margin = EdgeInsets.zero;
-    padding = EdgeInsets.symmetric(
-      horizontal: dynamicPadding,
-      vertical: dynamicPadding,
-    );
-    borderRadius = dynamicBorderRadius;
-    boxShadow = null;
 
     // 根据单元格大小和可用行高动态计算字体大小，与当月日期保持一致
     // 增大字体大小，提升可读性
@@ -159,74 +141,83 @@ class _CalendarViewState extends State<CalendarView> {
       defaultColor: Colors.grey[400],
     );
 
-    return Container(
-      margin: margin,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          // Use available space more flexibly, don't force aspect ratio
-          // if it causes overflow
-          return Container(
-            width: constraints.maxWidth,
-            height: constraints.maxHeight,
-            padding: padding,
-            decoration: BoxDecoration(
-              color: backgroundColor,
-              borderRadius: BorderRadius.circular(borderRadius),
-              boxShadow: boxShadow,
-            ),
-            child: Stack(
-              children: [
-                // Main content - date and lunar text
-                Positioned.fill(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // 公历日期
-                      Text(
-                        '${day.day}',
-                        style: TextStyle(
-                          fontSize: primaryFontSize,
-                          fontWeight: FontWeight.w500,
-                          color: textColor,
-                        ),
-                      ),
-                      // 添加垂直间距
-                      if (showLunarText)
-                        SizedBox(height: (cellSize * 0.04).clamp(2.0, 4.0)),
-                      // 农历日期 - 只在单元格足够大时显示
-                      if (showLunarText)
-                        Text(
-                          lunarText,
-                          style: TextStyle(
-                            fontSize: secondaryFontSize,
-                            color: calculatedLunarTextColor?.withValues(
-                              alpha: 0.7,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Use available space more flexibly, don't force aspect ratio
+        // if it causes overflow
+        return SizedBox(
+          width: constraints.maxWidth,
+          height: constraints.maxHeight,
+          child: Stack(
+            children: [
+              // Main content layer - always visible
+              Positioned.fill(
+                child: ClipRect(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: (cellSize * 0.04).clamp(1.0, 4.0),
+                      vertical: (cellSize * 0.04).clamp(1.0, 4.0),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // 公历日期
+                        Flexible(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              '${day.day}',
+                              style: TextStyle(
+                                fontSize: primaryFontSize,
+                                fontWeight: FontWeight.w500,
+                                color: textColor,
+                              ),
                             ),
-                            height: 1,
                           ),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                          softWrap: false,
                         ),
-                    ],
-                  ),
-                ),
-                // Holiday tag as floating overlay in top-right corner
-                if (HolidayHelper.hasHolidayInfo(day))
-                  Positioned(
-                    top: 2,
-                    right: 2,
-                    child: HolidayTag(
-                      isWorkDay: HolidayHelper.isWorkDay(day) ?? false,
-                      size: (cellSize * 0.25).clamp(12.0, 18.0),
+                        // 添加垂直间距
+                        if (showLunarText)
+                          SizedBox(height: (cellSize * 0.01).clamp(0.5, 1.0)),
+                        // 农历日期 - 只在单元格足够大时显示
+                        if (showLunarText)
+                          Flexible(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                lunarText,
+                                style: TextStyle(
+                                  fontSize: secondaryFontSize,
+                                  color: calculatedLunarTextColor?.withValues(
+                                    alpha: 0.7,
+                                  ),
+                                  height: 1,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                                softWrap: false,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
-              ],
-            ),
-          );
-        },
-      ),
+                ),
+              ),
+              // Holiday tag as floating overlay in top-right corner
+              if (HolidayHelper.hasHolidayInfo(day))
+                Positioned(
+                  top: 2,
+                  right: 2,
+                  child: HolidayTag(
+                    isWorkDay: HolidayHelper.isWorkDay(day) ?? false,
+                    size: (cellSize * 0.25).clamp(12.0, 18.0),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -247,33 +238,21 @@ class _CalendarViewState extends State<CalendarView> {
 
     Color? backgroundColor;
     Color? textColor;
-    EdgeInsets margin;
-    EdgeInsets padding;
     double borderRadius;
     List<BoxShadow>? boxShadow;
 
     // 根据单元格大小动态计算样式参数，更激进的缩放
-    final dynamicPadding = (cellSize * 0.08).clamp(2.0, 8.0);
     final dynamicBorderRadius = (cellSize * 0.15).clamp(4.0, 16.0);
 
-    // 单元格之间距离(决定了背景的大小)
-    final horizontalMargin = (cellSize * 0.08).clamp(3.0, 8.0);
-    final verticalMargin = (cellSize * 0.05).clamp(3.0, 8.0);
-    margin = EdgeInsets.symmetric(
-      horizontal: horizontalMargin,
-      vertical: verticalMargin,
-    );
-    // margin = EdgeInsets.zero;
+    // 单元格之间距离(决定了背景的大小) - now used for highlight inset
+    final horizontalInset = (cellSize * 0.08).clamp(3.0, 8.0);
+    final verticalInset = (cellSize * 0.05).clamp(3.0, 8.0);
+
     if (isToday) {
       // Today: use the old selected style (filled background)
       backgroundColor = Theme.of(context).primaryColor;
       textColor = Colors.white;
       // lunarTextColor is now handled after lunarText is calculated
-      // Add horizontal margin to create narrower, more proportioned highlight
-      padding = EdgeInsets.symmetric(
-        horizontal: dynamicPadding,
-        vertical: dynamicPadding,
-      );
       borderRadius = dynamicBorderRadius;
       // Add subtle shadow for better visual hierarchy - more refined
       boxShadow = [
@@ -291,10 +270,6 @@ class _CalendarViewState extends State<CalendarView> {
         textColor = null;
       }
 
-      padding = EdgeInsets.symmetric(
-        horizontal: dynamicPadding,
-        vertical: dynamicPadding,
-      );
       borderRadius = dynamicBorderRadius;
       boxShadow = null;
     } else {
@@ -306,11 +281,6 @@ class _CalendarViewState extends State<CalendarView> {
         textColor = null;
       }
       // lunarTextColor is now handled after lunarText is calculated
-      margin = EdgeInsets.zero;
-      padding = EdgeInsets.symmetric(
-        horizontal: dynamicPadding,
-        vertical: dynamicPadding,
-      );
       borderRadius = dynamicBorderRadius;
       boxShadow = null;
     }
@@ -359,72 +329,96 @@ class _CalendarViewState extends State<CalendarView> {
       );
     }
 
-    return Container(
-      margin: margin,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          // Use available space more flexibly, don't force aspect ratio
-          // if it causes overflow
-          return Container(
-            width: constraints.maxWidth,
-            height: constraints.maxHeight,
-            padding: padding,
-            decoration: BoxDecoration(
-              color: backgroundColor,
-              borderRadius: BorderRadius.circular(borderRadius),
-              boxShadow: boxShadow,
-            ),
-            child: Stack(
-              children: [
-                // Main content - date and lunar text
-                Positioned.fill(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // 公历日期
-                      Text(
-                        '${day.day}',
-                        style: TextStyle(
-                          fontSize: primaryFontSize,
-                          fontWeight: FontWeight.w500,
-                          color: textColor,
-                        ),
-                      ),
-                      // 添加垂直间距
-                      if (showLunarText)
-                        SizedBox(height: (cellSize * 0.04).clamp(2.0, 4.0)),
-                      // 农历日期 - 只在单元格足够大时显示
-                      if (showLunarText)
-                        Text(
-                          lunarText,
-                          style: TextStyle(
-                            fontSize: secondaryFontSize,
-                            color: calculatedLunarTextColor,
-                            height: 1,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                          softWrap: false,
-                        ),
-                    ],
-                  ),
-                ),
-                // Holiday tag as floating overlay in top-right corner
-                if (HolidayHelper.hasHolidayInfo(day))
-                  Positioned(
-                    top: 2,
-                    right: 2,
-                    child: HolidayTag(
-                      isWorkDay: HolidayHelper.isWorkDay(day) ?? false,
-                      size: (cellSize * 0.25).clamp(12.0, 18.0),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Use available space more flexibly, don't force aspect ratio
+        // if it causes overflow
+        return SizedBox(
+          width: constraints.maxWidth,
+          height: constraints.maxHeight,
+          child: Stack(
+            children: [
+              // Background highlight layer - only visible for today/selected
+              if (isToday || isSelected)
+                Positioned(
+                  left: horizontalInset,
+                  right: horizontalInset,
+                  top: verticalInset,
+                  bottom: verticalInset,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: backgroundColor,
+                      borderRadius: BorderRadius.circular(borderRadius),
+                      boxShadow: boxShadow,
                     ),
                   ),
-              ],
-            ),
-          );
-        },
-      ),
+                ),
+              // Main content layer - always visible
+              Positioned.fill(
+                child: ClipRect(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: (cellSize * 0.04).clamp(1.0, 4.0),
+                      vertical: (cellSize * 0.04).clamp(1.0, 4.0),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // 公历日期
+                        Flexible(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              '${day.day}',
+                              style: TextStyle(
+                                fontSize: primaryFontSize,
+                                fontWeight: FontWeight.w500,
+                                color: textColor,
+                              ),
+                            ),
+                          ),
+                        ),
+                        // 添加垂直间距
+                        if (showLunarText)
+                          SizedBox(height: (cellSize * 0.01).clamp(0.5, 1.0)),
+                        // 农历日期 - 只在单元格足够大时显示
+                        if (showLunarText)
+                          Flexible(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                lunarText,
+                                style: TextStyle(
+                                  fontSize: secondaryFontSize,
+                                  color: calculatedLunarTextColor,
+                                  height: 1,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                                softWrap: false,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              // Holiday tag as floating overlay in top-right corner
+              if (HolidayHelper.hasHolidayInfo(day))
+                Positioned(
+                  top: 2,
+                  right: 2,
+                  child: HolidayTag(
+                    isWorkDay: HolidayHelper.isWorkDay(day) ?? false,
+                    size: (cellSize * 0.25).clamp(12.0, 18.0),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 
