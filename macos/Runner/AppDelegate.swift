@@ -48,12 +48,14 @@ import FlutterMacOS
   }
 
   func setupMethodChannel() {
-    guard let flutterViewController = mainWindow?.contentViewController as? FlutterViewController else {
+    guard let flutterViewController = mainWindow?.contentViewController as? FlutterViewController
+    else {
       NSLog("Failed to get FlutterViewController for method channel setup")
       return
     }
 
-    let channel = FlutterMethodChannel(name: "calendar_settings", binaryMessenger: flutterViewController.engine.binaryMessenger)
+    let channel = FlutterMethodChannel(
+      name: "calendar_settings", binaryMessenger: flutterViewController.engine.binaryMessenger)
 
     channel.setMethodCallHandler { (call, result) in
       switch call.method {
@@ -83,7 +85,7 @@ import FlutterMacOS
     }
 
     // 设置按钮属性
-    updateTrayIcon() // Use dynamic icon
+    updateTrayIcon()  // Use dynamic icon
     button.action = #selector(statusBarButtonClicked)
     button.target = self
     button.toolTip = "Tiny Chinese Lunar Calendar - Click to show/hide"
@@ -106,7 +108,8 @@ import FlutterMacOS
     contextMenu = NSMenu()
 
     // App Settings menu item
-    let settingsItem = NSMenuItem(title: "设置", action: #selector(showAppSettings), keyEquivalent: ",")
+    let settingsItem = NSMenuItem(
+      title: "设置", action: #selector(showAppSettings), keyEquivalent: ",")
     settingsItem.target = self
     contextMenu?.addItem(settingsItem)
 
@@ -131,20 +134,21 @@ import FlutterMacOS
 
   func updateTrayIcon() {
     guard let statusItem = statusItem,
-          let button = statusItem.button else {
+      let button = statusItem.button
+    else {
       NSLog("Failed to get status item button for icon update")
       return
     }
 
     let icon = generateCalendarIcon()
     button.image = icon
-    button.title = "" // Clear any text title
+    button.title = ""  // Clear any text title
 
     NSLog("Tray icon updated with current date")
   }
 
   func generateCalendarIcon() -> NSImage {
-    let iconSize = NSSize(width: 22, height: 22) // Increased size for clarity
+    let iconSize = NSSize(width: 22, height: 22)  // Increased size for clarity
     let image = NSImage(size: iconSize)
 
     image.lockFocus()
@@ -154,49 +158,53 @@ import FlutterMacOS
     let now = Date()
     let day = calendar.component(.day, from: now)
 
-    // Get weekday abbreviation (e.g., "周二" for Tuesday)
+    // Get weekday abbreviation and remove "周" prefix (e.g., "二" for Tuesday)
     let formatter = DateFormatter()
     formatter.locale = Locale(identifier: "zh_CN")
     formatter.dateFormat = "E"
-    let weekdayText = formatter.string(from: now)
+    let fullWeekdayText = formatter.string(from: now)
+    // Remove the "周" prefix to show only the week identifier
+    let weekdayText = String(fullWeekdayText.dropFirst())
 
     // Define a rounded rectangle path for the icon background
     let cornerRadius: CGFloat = 4.0
-    let backgroundPath = NSBezierPath(roundedRect: NSRect(origin: .zero, size: iconSize), xRadius: cornerRadius, yRadius: cornerRadius)
+    let backgroundPath = NSBezierPath(
+      roundedRect: NSRect(origin: .zero, size: iconSize), xRadius: cornerRadius,
+      yRadius: cornerRadius)
 
     // Draw background
     NSColor.white.setFill()
     backgroundPath.fill()
 
-    // Draw weekday text (at the top, in red) - smaller and less prominent
-    let weekdayFont: NSFont = NSFont.systemFont(ofSize: 7, weight: .semibold)
+    // Draw weekday text (at the top, in red) - positioned in upper area
+    let weekdayFont: NSFont = NSFont.systemFont(ofSize: 9, weight: .black)  // Smaller font
     let weekdayAttributes: [NSAttributedString.Key: Any] = [
-        .font: weekdayFont,
-        .foregroundColor: NSColor.systemRed
+      .font: weekdayFont,
+      .foregroundColor: NSColor.systemRed,
     ]
     let weekdayString = NSAttributedString(string: weekdayText, attributes: weekdayAttributes)
     let weekdaySize = weekdayString.size()
     let weekdayRect = NSRect(
-        x: (iconSize.width - weekdaySize.width) / 2,
-        y: iconSize.height - weekdaySize.height - 1, // Position closer to top
-        width: weekdaySize.width,
-        height: weekdaySize.height
+      x: (iconSize.width - weekdaySize.width) / 2,
+      y: iconSize.height - weekdaySize.height + 1,  // Move closer to top edge
+      width: weekdaySize.width,
+      height: weekdaySize.height
     )
     weekdayString.draw(in: weekdayRect)
 
-    // Draw day number (larger, bold, with more spacing from weekday)
-    let dayFont = NSFont.systemFont(ofSize: 13, weight: .medium)
+    // Draw day number (positioned in lower area with clear separation)
+    let dayFont = NSFont.systemFont(ofSize: 14, weight: .bold)  // Reduced font size
     let dayAttributes: [NSAttributedString.Key: Any] = [
-        .font: dayFont,
-        .foregroundColor: NSColor.black
+      .font: dayFont,
+      .foregroundColor: NSColor.black,
     ]
     let dayString = NSAttributedString(string: "\(day)", attributes: dayAttributes)
     let daySize = dayString.size()
     let dayRect = NSRect(
-        x: (iconSize.width - daySize.width) / 2,
-        y: (iconSize.height - daySize.height) / 2 - 3, // More spacing from weekday
-        width: daySize.width,
-        height: daySize.height
+      x: (iconSize.width - daySize.width) / 2,
+      y: -1.5,  // More spacing from weekday
+      width: daySize.width,
+      height: daySize.height
     )
     dayString.draw(in: dayRect)
 
@@ -246,8 +254,8 @@ import FlutterMacOS
   func setupMainMenu() {
     // The application menu is connected via an @IBOutlet from the MainMenu.xib
     guard let appMenu = applicationMenu else {
-        NSLog("Application menu outlet not connected.")
-        return
+      NSLog("Application menu outlet not connected.")
+      return
     }
 
     // Find the "Preferences..." menu item, update its title, and connect it to our action.
@@ -257,7 +265,7 @@ import FlutterMacOS
       settingsItem.action = #selector(showPreferences(_:))
       NSLog("System Settings menu item updated and connected.")
     } else {
-        NSLog("Could not find 'Preferences...' menu item to update.")
+      NSLog("Could not find 'Preferences...' menu item to update.")
     }
   }
 
@@ -290,8 +298,9 @@ import FlutterMacOS
 
   func showContextMenu() {
     guard let statusItem = statusItem,
-          let button = statusItem.button,
-          let menu = contextMenu else {
+      let button = statusItem.button,
+      let menu = contextMenu
+    else {
       NSLog("Failed to get components for context menu")
       return
     }
@@ -354,8 +363,9 @@ import FlutterMacOS
 
   func positionWindowBelowStatusItem(_ window: NSWindow) {
     guard let statusItem = statusItem,
-          let button = statusItem.button,
-          let buttonWindow = button.window else {
+      let button = statusItem.button,
+      let buttonWindow = button.window
+    else {
       NSLog("Failed to get status item components for positioning")
       return
     }
@@ -385,7 +395,9 @@ import FlutterMacOS
     // 设置窗口位置
     window.setFrameOrigin(NSPoint(x: adjustedX, y: adjustedY))
 
-    NSLog("Window positioned at (\(adjustedX), \(adjustedY)) below status item at (\(buttonFrame.midX), \(buttonFrame.minY)) on screen \(screenFrame)")
+    NSLog(
+      "Window positioned at (\(adjustedX), \(adjustedY)) below status item at (\(buttonFrame.midX), \(buttonFrame.minY)) on screen \(screenFrame)"
+    )
   }
 
   func findScreenContaining(point: NSPoint) -> NSScreen? {
@@ -404,7 +416,8 @@ import FlutterMacOS
     }
 
     // 监听全局鼠标点击事件
-    eventMonitor = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseDown) { [weak self] event in
+    eventMonitor = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseDown) {
+      [weak self] event in
       guard let self = self, self.isWindowVisible else { return }
 
       // 获取点击位置（屏幕坐标）
@@ -417,8 +430,9 @@ import FlutterMacOS
       // 获取状态栏按钮框架（屏幕坐标）
       var statusButtonFrame = NSRect.zero
       if let statusItem = self.statusItem,
-         let button = statusItem.button,
-         let buttonWindow = button.window {
+        let button = statusItem.button,
+        let buttonWindow = button.window
+      {
         statusButtonFrame = buttonWindow.convertToScreen(button.frame)
       }
 
@@ -451,7 +465,8 @@ import FlutterMacOS
     settingsWindow.contentView = contentView
 
     // Create checkbox for Sunday first column
-    let checkbox = NSButton(checkboxWithTitle: "从周日开始", target: self, action: #selector(sundayFirstChanged(_:)))
+    let checkbox = NSButton(
+      checkboxWithTitle: "从周日开始", target: self, action: #selector(sundayFirstChanged(_:)))
     checkbox.frame = NSRect(x: 20, y: 120, width: 200, height: 20)
 
     // Load current setting
@@ -483,7 +498,8 @@ import FlutterMacOS
 
     // Notify Flutter about the setting change
     if let flutterViewController = mainWindow?.contentViewController as? FlutterViewController {
-      let channel = FlutterMethodChannel(name: "calendar_settings", binaryMessenger: flutterViewController.engine.binaryMessenger)
+      let channel = FlutterMethodChannel(
+        name: "calendar_settings", binaryMessenger: flutterViewController.engine.binaryMessenger)
       channel.invokeMethod("settingsChanged", arguments: ["sundayFirst": sundayFirst])
     }
   }
@@ -495,7 +511,8 @@ import FlutterMacOS
     }
 
     // Monitor global mouse clicks
-    settingsEventMonitor = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseDown) { [weak self] event in
+    settingsEventMonitor = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseDown) {
+      [weak self] event in
       guard let self = self, let settingsWindow = self.settingsWindow else { return }
 
       // Get click location in screen coordinates
@@ -528,9 +545,11 @@ import FlutterMacOS
       .applicationName: "Tiny Chinese Lunar Calendar",
       .applicationVersion: "1.0",
       .version: "Build 1.0.0",
-      NSApplication.AboutPanelOptionKey(rawValue: "Copyright"): "© 2024 Tiny Chinese Lunar Calendar",
-      .credits: NSAttributedString(string: "A compact lunar calendar application for macOS.\n\nBuilt with Flutter and Swift."),
-      .applicationIcon: (NSApp.applicationIconImage ?? NSImage(named: "AppIcon")) as Any
+      NSApplication.AboutPanelOptionKey(rawValue: "Copyright"):
+        "© 2024 Tiny Chinese Lunar Calendar",
+      .credits: NSAttributedString(
+        string: "A compact lunar calendar application for macOS.\n\nBuilt with Flutter and Swift."),
+      .applicationIcon: (NSApp.applicationIconImage ?? NSImage(named: "AppIcon")) as Any,
     ]
 
     NSApp.orderFrontStandardAboutPanel(options: options)

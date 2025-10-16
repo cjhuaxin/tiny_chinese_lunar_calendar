@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:lunar/lunar.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:tiny_chinese_lunar_calendar/app/theme/app_theme.dart';
 import 'package:tiny_chinese_lunar_calendar/l10n/l10n.dart';
 
 class CalendarPage extends StatelessWidget {
@@ -107,7 +108,7 @@ class _CalendarViewState extends State<CalendarView> {
     backgroundColor = null;
     if (isWeekend) {
       // 周末日期使用红色，但因为是非当月日期，所以使用较淡的红色
-      textColor = Colors.red.withValues(alpha: 0.4);
+      textColor = AppTheme.chineseRed.withValues(alpha: 0.4);
     } else {
       textColor = Colors.grey[400]; // 非当月日期使用灰色
     }
@@ -259,7 +260,7 @@ class _CalendarViewState extends State<CalendarView> {
       // Selected day: red border only
       backgroundColor = null;
       if (isWeekend) {
-        textColor = Colors.red;
+        textColor = AppTheme.chineseRed;
       } else {
         textColor = null;
       }
@@ -297,7 +298,7 @@ class _CalendarViewState extends State<CalendarView> {
       backgroundColor = null;
       if (isWeekend) {
         // 周末日期使用红色
-        textColor = Colors.red;
+        textColor = AppTheme.chineseRed;
       } else {
         textColor = null;
       }
@@ -364,7 +365,7 @@ class _CalendarViewState extends State<CalendarView> {
               borderRadius: BorderRadius.circular(borderRadius),
               border: isSelected
                   ? Border.all(
-                      color: Colors.red,
+                      color: AppTheme.chineseRed,
                       width: 2,
                     )
                   : null,
@@ -510,11 +511,11 @@ class _CalendarViewState extends State<CalendarView> {
     final jieQi = lunarDate.getJieQi();
 
     if (lunarFestivals.isNotEmpty && lunarText == lunarFestivals.first) {
-      return Colors.red;
+      return AppTheme.chineseRed;
     }
 
     if (jieQi.isNotEmpty && lunarText == jieQi) {
-      return Colors.red;
+      return AppTheme.chineseRed;
     }
 
     // Check if it's a solar festival (use light blue)
@@ -523,7 +524,7 @@ class _CalendarViewState extends State<CalendarView> {
         ? solarFestivals.first
         : null;
     if (solarFestival != null && lunarText == solarFestival) {
-      return const Color(0xFF87CEEB); // Light blue color for solar festivals
+      return AppTheme.darkBlue; // Darker blue color for solar festivals
     }
 
     // Solar other festivals use default color
@@ -663,7 +664,7 @@ class _CalendarViewState extends State<CalendarView> {
                       weekendStyle: TextStyle(
                         fontSize: (baseFontSize * 0.9).clamp(10.0, 14.0),
                         fontWeight: FontWeight.w600,
-                        color: Colors.red, // 周末星期标题使用红色
+                        color: AppTheme.chineseRed, // 周末星期标题使用红色
                       ),
                     ),
                     startingDayOfWeek: _sundayFirst

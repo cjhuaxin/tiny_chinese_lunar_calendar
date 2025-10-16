@@ -4,15 +4,24 @@ import 'package:flutter/material.dart';
 /// 采用中国红为主色调，营造传统文化氛围
 class AppTheme {
   // 中国红色系配色 - 更现代化的中国红调色板
-  static const Color _chineseRed = Color(0xFFE53935); // 主要的中国红，稍微明亮一些
-  static const Color _deepRed = Color(0xFFC62828); // 深红色，更温暖
-  static const Color _lightRed = Color(0xFFEF5350); // 浅红色
+  static const Color _chineseRed = Color(
+    0xFFD32F2F,
+  ); // 主要的中国红，更接近Flutter Debug Banner
+  static const Color _deepRed = Color(0xFFB71C1C); // 深红色，用于错误状态
+  static const Color _lightRed = Color(0xFFE57373); // 浅红色
   static const Color _softRed = Color(0xFFFFEBEE); // 非常柔和的红色背景
 
   // 辅助色彩
+  static const Color _darkBlue = Color(0xFF1976D2); // 更沉稳的蓝色
   static const Color _goldAccent = Color(0xFFFF8F00); // 更温暖的金色
   static const Color _warmGray = Color(0xFF424242); // 现代化的深灰色
   static const Color _lightGray = Color(0xFFFAFAFA); // 更纯净的浅灰色背景
+
+  /// 获取深蓝色，用于日历中的节日显示
+  static Color get darkBlue => _darkBlue;
+
+  /// 获取中国红色，用于日历中的重要日期
+  static Color get chineseRed => _chineseRed;
 
   /// 获取亮色主题
   static ThemeData get lightTheme {
@@ -75,11 +84,9 @@ class AppTheme {
         ),
       ),
 
-      // 图标按钮主题
-      iconButtonTheme: IconButtonThemeData(
-        style: IconButton.styleFrom(
-          foregroundColor: _chineseRed,
-        ),
+      // 图标按钮主题 - 不设置全局前景色，让AppBar的iconTheme优先
+      iconButtonTheme: const IconButtonThemeData(
+        style: ButtonStyle(),
       ),
 
       // 输入框主题
@@ -185,11 +192,9 @@ class AppTheme {
         ),
       ),
 
-      // 图标按钮主题
-      iconButtonTheme: IconButtonThemeData(
-        style: IconButton.styleFrom(
-          foregroundColor: _lightRed,
-        ),
+      // 图标按钮主题 - 不设置全局前景色，让AppBar的iconTheme优先
+      iconButtonTheme: const IconButtonThemeData(
+        style: ButtonStyle(),
       ),
     );
   }
