@@ -341,14 +341,20 @@ class _CalendarViewState extends State<CalendarView> {
     final lunarText = _getLunarText(lunarDate, solarDate);
 
     // Calculate lunar text color based on content type
-    final calculatedLunarTextColor = _getLunarTextColor(
-      lunarText,
-      lunarDate,
-      solarDate,
-      defaultColor: Theme.of(
-        context,
-      ).colorScheme.onSurface.withValues(alpha: 0.6),
-    );
+    Color? calculatedLunarTextColor;
+    if (isToday || (isSelected && isToday)) {
+      // For today's cell, use white color to match the date number
+      calculatedLunarTextColor = Colors.white;
+    } else {
+      calculatedLunarTextColor = _getLunarTextColor(
+        lunarText,
+        lunarDate,
+        solarDate,
+        defaultColor: Theme.of(
+          context,
+        ).colorScheme.onSurface.withValues(alpha: 0.6),
+      );
+    }
 
     return Container(
       margin: margin,
