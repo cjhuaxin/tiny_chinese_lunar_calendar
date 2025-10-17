@@ -207,8 +207,8 @@ class _CalendarViewState extends State<CalendarView> {
               // Holiday tag as floating overlay in top-right corner
               if (HolidayHelper.hasHolidayInfo(day))
                 Positioned(
-                  top: 2,
-                  right: 2,
+                  top: (cellSize * 0.05).clamp(2.0, 6.0),
+                  right: (cellSize * 0.1).clamp(2.0, 6.0),
                   child: HolidayTag(
                     isWorkDay: HolidayHelper.isWorkDay(day) ?? false,
                     size: (cellSize * 0.25).clamp(12.0, 18.0),
@@ -248,12 +248,12 @@ class _CalendarViewState extends State<CalendarView> {
     final horizontalInset = (cellSize * 0.08).clamp(3.0, 8.0);
     final verticalInset = (cellSize * 0.05).clamp(3.0, 8.0);
 
+    borderRadius = dynamicBorderRadius;
     if (isToday) {
       // Today: use the old selected style (filled background)
       backgroundColor = Theme.of(context).primaryColor;
       textColor = Colors.white;
       // lunarTextColor is now handled after lunarText is calculated
-      borderRadius = dynamicBorderRadius;
       // Add subtle shadow for better visual hierarchy - more refined
       boxShadow = [
         BoxShadow(
@@ -270,7 +270,6 @@ class _CalendarViewState extends State<CalendarView> {
         textColor = null;
       }
 
-      borderRadius = dynamicBorderRadius;
       boxShadow = null;
     } else {
       backgroundColor = null;
@@ -281,7 +280,6 @@ class _CalendarViewState extends State<CalendarView> {
         textColor = null;
       }
       // lunarTextColor is now handled after lunarText is calculated
-      borderRadius = dynamicBorderRadius;
       boxShadow = null;
     }
 
@@ -408,8 +406,8 @@ class _CalendarViewState extends State<CalendarView> {
               // Holiday tag as floating overlay in top-right corner
               if (HolidayHelper.hasHolidayInfo(day))
                 Positioned(
-                  top: 2,
-                  right: 2,
+                  top: (cellSize * 0.05).clamp(2.0, 6.0),
+                  right: (cellSize * 0.1).clamp(2.0, 6.0),
                   child: HolidayTag(
                     isWorkDay: HolidayHelper.isWorkDay(day) ?? false,
                     size: (cellSize * 0.25).clamp(12.0, 18.0),
