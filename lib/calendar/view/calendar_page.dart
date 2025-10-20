@@ -90,6 +90,153 @@ class _CalendarViewState extends State<CalendarView> {
     });
   }
 
+  /// Show year picker dialog
+  Future<void> _showYearPicker() async {
+    final currentYear = _focusedDay.year;
+    final todayYear = DateTime.now().year;
+    final selectedYear = await showDialog<int>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          title: Text(context.l10n.selectYear),
+          content: SizedBox(
+            width: 300,
+            height: 350,
+            child: Column(
+              children: [
+                // Current Year button
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: currentYear != todayYear
+                          ? () {
+                              Navigator.of(context).pop(todayYear);
+                            }
+                          : null, // Disable if already on current year
+                      icon: const Icon(Icons.today),
+                      label: Text('${context.l10n.today} ($todayYear)'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: currentYear != todayYear
+                            ? Theme.of(context).primaryColor
+                            : Colors.grey,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+                // Year picker
+                Expanded(
+                  child: YearPicker(
+                    firstDate: kFirstDay,
+                    lastDate: kLastDay,
+                    selectedDate: _focusedDay,
+                    onChanged: (DateTime dateTime) {
+                      Navigator.of(context).pop(dateTime.year);
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (selectedYear != null && selectedYear != currentYear) {
+      setState(() {
+        _focusedDay = DateTime(selectedYear, _focusedDay.month, 1);
+        _selectedDay = null; // Clear selection when changing year
+      });
+    }
+  }
+
+  /// Show month picker dialog
+  Future<void> _showMonthPicker() async {
+    final currentMonth = _focusedDay.month;
+    final selectedMonth = await showDialog<int>(
+      context: context,
+      builder: (BuildContext context) {
+        final l10n = context.l10n;
+        final locale = Localizations.localeOf(context);
+
+        // Generate month names using DateFormat for proper localization
+        final months = List.generate(12, (index) {
+          final date = DateTime(2024, index + 1);
+          return DateFormat.MMMM(locale.toString()).format(date);
+        });
+
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          title: Text(l10n.selectMonth),
+          content: SizedBox(
+            width: 350,
+            height: 300,
+            child: GridView.builder(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3, // 3 columns, 4 rows
+                childAspectRatio: 2.5, // Adjust for better button proportions
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
+              ),
+              itemCount: 12,
+              itemBuilder: (context, index) {
+                final month = index + 1;
+                final isSelected = month == currentMonth;
+                return Material(
+                  color: isSelected
+                      ? Theme.of(context).primaryColor.withValues(alpha: 0.2)
+                      : Colors.grey.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(8),
+                    onTap: () {
+                      Navigator.of(context).pop(month);
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        border: isSelected
+                            ? Border.all(
+                                color: Theme.of(context).primaryColor,
+                                width: 2,
+                              )
+                            : null,
+                      ),
+                      child: Center(
+                        child: Text(
+                          months[index],
+                          style: TextStyle(
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                            color: isSelected
+                                ? Theme.of(context).primaryColor
+                                : Theme.of(context).textTheme.bodyLarge?.color,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+
+    if (selectedMonth != null && selectedMonth != currentMonth) {
+      setState(() {
+        _focusedDay = DateTime(_focusedDay.year, selectedMonth);
+        _selectedDay = null; // Clear selection when changing month
+      });
+    }
+  }
+
   /// 构建非当月日期单元格，同时显示公历和农历日期
   Widget _buildOutsideDateCell(
     DateTime day,
@@ -695,17 +842,61 @@ class _CalendarViewState extends State<CalendarView> {
                     calendarBuilders: CalendarBuilders(
                       headerTitleBuilder: (context, day) {
                         final locale = Localizations.localeOf(context);
-                        final formatter = DateFormat.yMMMM(locale.toString());
+                        final yearFormatter = DateFormat.y(locale.toString());
+                        final monthFormatter = DateFormat.MMMM(
+                          locale.toString(),
+                        );
+
                         return Container(
                           padding: EdgeInsets.all(headerPadding),
-                          child: Text(
-                            formatter.format(day),
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: headerFontSize,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              // Clickable year
+                              InkWell(
+                                onTap: _showYearPicker,
+                                borderRadius: BorderRadius.circular(8),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  child: Text(
+                                    yearFormatter.format(day),
+                                    style: TextStyle(
+                                      fontSize: headerFontSize,
+                                      fontWeight: FontWeight.bold,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.primary,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              // Space between year and month
+                              const SizedBox(width: 8),
+                              // Clickable month
+                              InkWell(
+                                onTap: _showMonthPicker,
+                                borderRadius: BorderRadius.circular(8),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  child: Text(
+                                    monthFormatter.format(day),
+                                    style: TextStyle(
+                                      fontSize: headerFontSize,
+                                      fontWeight: FontWeight.bold,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.primary,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         );
                       },

@@ -25,5 +25,13 @@
                 "description": "The selected date"
             }
         }
+    },
+    "selectYear": "Select Year",
+    "@selectYear": {
+        "description": "Title for year picker dialog"
+    },
+    "selectMonth": "Select Month",
+    "@selectMonth": {
+        "description": "Title for month picker dialog"
     }
 }

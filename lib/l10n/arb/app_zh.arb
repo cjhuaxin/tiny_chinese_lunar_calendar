@@ -25,5 +25,13 @@
                 "description": "所选日期"
             }
         }
+    },
+    "selectYear": "选择年份",
+    "@selectYear": {
+        "description": "Title for year picker dialog"
+    },
+    "selectMonth": "选择月份",
+    "@selectMonth": {
+        "description": "Title for month picker dialog"
     }
 }
