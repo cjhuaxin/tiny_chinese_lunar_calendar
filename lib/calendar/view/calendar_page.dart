@@ -49,6 +49,7 @@ class _CalendarViewState extends State<CalendarView> {
     _focusedDay = widget.initialFocusedDay ?? DateTime.now();
     _loadSettings();
     _setupMethodChannel();
+    _initializeHolidayService();
   }
 
   void _loadSettings() {
@@ -77,6 +78,15 @@ class _CalendarViewState extends State<CalendarView> {
           _sundayFirst = (arguments['sundayFirst'] as bool?) ?? false;
         });
       }
+    });
+  }
+
+  void _initializeHolidayService() {
+    // Initialize holiday service in background after Flutter bindings are ready
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      HolidayHelper.initialize().catchError((Object error) {
+        debugPrint('Failed to initialize holiday service: $error');
+      });
     });
   }
 

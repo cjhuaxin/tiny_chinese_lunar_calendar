@@ -13,6 +13,7 @@ dependencies:
   flutter_bloc: ^9.1.1
   flutter_localizations:
     sdk: flutter
+  http: ^1.1.0
   intl: ^0.20.2
   lunar: ^1.7.5
   shared_preferences: ^2.2.2
