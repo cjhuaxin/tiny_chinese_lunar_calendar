@@ -720,40 +720,41 @@ class _CalendarViewState extends State<CalendarView> {
 
                         return Container(
                           padding: EdgeInsets.all(headerPadding),
-                          child: InkWell(
-                            onTap: _showYearMonthPicker,
-                            borderRadius: BorderRadius.circular(8),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    yearFormatter.format(day),
-                                    style: TextStyle(
-                                      fontSize: headerFontSize,
-                                      fontWeight: FontWeight.bold,
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.primary,
+                          child: Center(
+                            child: InkWell(
+                              onTap: _showYearMonthPicker,
+                              borderRadius: BorderRadius.circular(8),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      yearFormatter.format(day),
+                                      style: TextStyle(
+                                        fontSize: headerFontSize,
+                                        fontWeight: FontWeight.bold,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.primary,
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    monthFormatter.format(day),
-                                    style: TextStyle(
-                                      fontSize: headerFontSize,
-                                      fontWeight: FontWeight.bold,
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.primary,
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      monthFormatter.format(day),
+                                      style: TextStyle(
+                                        fontSize: headerFontSize,
+                                        fontWeight: FontWeight.bold,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.primary,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
                           ),
