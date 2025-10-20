@@ -33,5 +33,13 @@
     "selectMonth": "选择月份",
     "@selectMonth": {
         "description": "Title for month picker dialog"
+    },
+    "cancel": "取消",
+    "@cancel": {
+        "description": "取消按钮文本"
+    },
+    "ok": "确定",
+    "@ok": {
+        "description": "确定按钮文本"
     }
 }

@@ -33,5 +33,13 @@
     "selectMonth": "Select Month",
     "@selectMonth": {
         "description": "Title for month picker dialog"
+    },
+    "cancel": "Cancel",
+    "@cancel": {
+        "description": "Cancel button text"
+    },
+    "ok": "OK",
+    "@ok": {
+        "description": "OK button text"
     }
 }
