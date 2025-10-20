@@ -6,6 +6,7 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:tiny_chinese_lunar_calendar/app/theme/app_theme.dart';
 import 'package:tiny_chinese_lunar_calendar/calendar/utils/holiday_helper.dart';
 import 'package:tiny_chinese_lunar_calendar/calendar/widgets/holiday_tag.dart';
+import 'package:tiny_chinese_lunar_calendar/calendar/widgets/today_icon.dart';
 import 'package:tiny_chinese_lunar_calendar/calendar/widgets/year_month_picker_dialog.dart';
 import 'package:tiny_chinese_lunar_calendar/l10n/l10n.dart';
 
@@ -583,7 +584,7 @@ class _CalendarViewState extends State<CalendarView> {
           centerTitle: true,
           actions: [
             IconButton(
-              icon: const Icon(Icons.today),
+              icon: const TodayIcon(),
               onPressed: () {
                 setState(() {
                   _focusedDay = DateTime.now();
