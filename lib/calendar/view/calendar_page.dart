@@ -572,16 +572,34 @@ class _CalendarViewState extends State<CalendarView> {
     return defaultColor;
   }
 
+  /// Get the lunar date text for the title bar
+  String _getLunarDateTitle(DateTime date) {
+    final lunarDate = Lunar.fromDate(date);
+    return '${lunarDate.getMonthInChinese()}月${lunarDate.getDayInChinese()}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+
+    // Get the date to display in title bar - use selected date if available,
+    // otherwise focused day
+    final titleDate = _selectedDay ?? _focusedDay;
+    final lunarTitle = _getLunarDateTitle(titleDate);
+
     return MediaQuery.removePadding(
       context: context,
       removeTop: true,
       child: Scaffold(
         appBar: AppBar(
-          title: Text(l10n.calendarAppBarTitle),
-          centerTitle: true,
+          title: Text(
+            lunarTitle,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          centerTitle: false,
           actions: [
             IconButton(
               icon: const TodayIcon(),
