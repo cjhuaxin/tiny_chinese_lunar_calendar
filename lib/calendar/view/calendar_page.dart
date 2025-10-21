@@ -102,9 +102,11 @@ class _CalendarViewState extends State<CalendarView> {
     );
 
     if (selectedDate != null) {
+      // After closing the picker, automatically select the first day of the
+      // chosen month to improve UX.
       setState(() {
         _focusedDay = selectedDate;
-        _selectedDay = null; // Clear selection when changing month/year
+        _selectedDay = DateTime(selectedDate.year, selectedDate.month);
       });
     }
   }
@@ -572,9 +574,15 @@ class _CalendarViewState extends State<CalendarView> {
     return defaultColor;
   }
 
+  DateTime _normalizeToLocalDate(DateTime date) {
+    final local = date.isUtc ? date.toLocal() : date;
+    return DateTime(local.year, local.month, local.day);
+  }
+
   /// Get the lunar date text for the title bar
   String _getLunarDateTitle(DateTime date) {
-    final lunarDate = Lunar.fromDate(date);
+    final normalized = _normalizeToLocalDate(date);
+    final lunarDate = Lunar.fromDate(normalized);
     return '${lunarDate.getMonthInChinese()}月${lunarDate.getDayInChinese()}';
   }
 
