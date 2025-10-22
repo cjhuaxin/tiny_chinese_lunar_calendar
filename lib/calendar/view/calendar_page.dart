@@ -579,11 +579,35 @@ class _CalendarViewState extends State<CalendarView> {
     return DateTime(local.year, local.month, local.day);
   }
 
-  /// Get the lunar date text for the title bar
-  String _getLunarDateTitle(DateTime date) {
+  /// Get the zodiac animal emoji for the given lunar date
+  String _getZodiacIcon(String shengXiao) {
+    const zodiacIcons = {
+      '鼠': '🐭', // Rat
+      '牛': '🐮', // Ox
+      '虎': '🐯', // Tiger
+      '兔': '🐰', // Rabbit
+      '龙': '🐲', // Dragon
+      '蛇': '🐍', // Snake
+      '马': '🐴', // Horse
+      '羊': '🐑', // Goat/Sheep
+      '猴': '🐵', // Monkey
+      '鸡': '🐔', // Rooster
+      '狗': '🐶', // Dog
+      '猪': '🐷', // Pig
+    };
+    return zodiacIcons[shengXiao] ?? '';
+  }
+
+  /// Get the lunar date text with zodiac icon for the title bar
+  Map<String, String> _getLunarDateTitleParts(DateTime date) {
     final normalized = _normalizeToLocalDate(date);
     final lunarDate = Lunar.fromDate(normalized);
-    return '${lunarDate.getMonthInChinese()}月${lunarDate.getDayInChinese()}';
+    final shengXiao = lunarDate.getYearShengXiao();
+    final zodiacIcon = _getZodiacIcon(shengXiao);
+    final dateStr =
+        '${lunarDate.getMonthInChinese()}月${lunarDate.getDayInChinese()}';
+
+    return {'icon': zodiacIcon, 'date': dateStr};
   }
 
   @override
@@ -593,19 +617,33 @@ class _CalendarViewState extends State<CalendarView> {
     // Get the date to display in title bar - use selected date if available,
     // otherwise focused day
     final titleDate = _selectedDay ?? _focusedDay;
-    final lunarTitle = _getLunarDateTitle(titleDate);
+    final lunarTitleParts = _getLunarDateTitleParts(titleDate);
+    final zodiacIcon = lunarTitleParts['icon'] ?? '';
+    final lunarDateStr = lunarTitleParts['date'] ?? '';
 
     return MediaQuery.removePadding(
       context: context,
       removeTop: true,
       child: Scaffold(
         appBar: AppBar(
-          title: Text(
-            lunarTitle,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
+          title: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                zodiacIcon,
+                style: const TextStyle(
+                  fontSize: 24, // Larger size for the emoji
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                lunarDateStr,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
           ),
           centerTitle: false,
           actions: [
