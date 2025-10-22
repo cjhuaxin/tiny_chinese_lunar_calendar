@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -39,19 +40,70 @@ class CalendarView extends StatefulWidget {
   State<CalendarView> createState() => _CalendarViewState();
 }
 
-class _CalendarViewState extends State<CalendarView> {
+class _CalendarViewState extends State<CalendarView>
+    with WidgetsBindingObserver {
   DateTime? _selectedDay;
   late DateTime _focusedDay;
   bool _sundayFirst = false;
   static const MethodChannel _channel = MethodChannel('calendar_settings');
+  Timer? _dateCheckTimer;
+  late DateTime _lastKnownDate;
 
   @override
   void initState() {
     super.initState();
     _focusedDay = widget.initialFocusedDay ?? DateTime.now();
+    _lastKnownDate = DateTime.now();
+    WidgetsBinding.instance.addObserver(this);
+    _startDateCheckTimer();
     _loadSettings();
     _setupMethodChannel();
     _initializeHolidayService();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _dateCheckTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) {
+      _checkForDateChange();
+    }
+  }
+
+  void _startDateCheckTimer() {
+    _dateCheckTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
+      _checkForDateChange();
+    });
+  }
+
+  void _checkForDateChange() {
+    final currentDate = DateTime.now();
+    final currentDay = DateTime(
+      currentDate.year,
+      currentDate.month,
+      currentDate.day,
+    );
+    final lastKnownDay = DateTime(
+      _lastKnownDate.year,
+      _lastKnownDate.month,
+      _lastKnownDate.day,
+    );
+
+    if (currentDay != lastKnownDay) {
+      setState(() {
+        _lastKnownDate = currentDate;
+        // Update focused day to current date if no specific day is selected
+        if (_selectedDay == null) {
+          _focusedDay = currentDate;
+        }
+      });
+    }
   }
 
   void _loadSettings() {
