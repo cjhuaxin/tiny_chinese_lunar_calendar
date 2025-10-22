@@ -11,6 +11,7 @@ import 'package:tiny_chinese_lunar_calendar/calendar/widgets/today_icon.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:tiny_chinese_lunar_calendar/calendar/widgets/year_month_picker_dialog.dart';
 import 'package:tiny_chinese_lunar_calendar/l10n/l10n.dart';
+import 'package:tiny_chinese_lunar_calendar/calendar/utils/date_humanized.dart';
 
 class CalendarPage extends StatelessWidget {
   const CalendarPage({super.key, this.onLanguageChanged});
@@ -50,6 +51,17 @@ class _CalendarViewState extends State<CalendarView>
   Timer? _dateCheckTimer;
   late DateTime _lastKnownDate;
 
+  // Festival cycling state
+  Timer? _festivalCycleTimer;
+  int _currentFestivalIndex = 0;
+  List<String> _currentFestivals = [];
+
+  // Relative date cycling state
+  Timer? _relativeDateCycleTimer;
+  int _currentRelativeDateIndex = 0;
+  List<String> _currentRelativeDates = [];
+  int cyclingDuration = 5;
+
   @override
   void initState() {
     super.initState();
@@ -60,12 +72,19 @@ class _CalendarViewState extends State<CalendarView>
     _loadSettings();
     _setupMethodChannel();
     _initializeHolidayService();
+
+    // Initial festival setup
+    _startFestivalCycling(_selectedDay ?? _focusedDay);
+    // Initial relative date setup
+    _startRelativeDateCycling(_selectedDay ?? _focusedDay);
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _dateCheckTimer?.cancel();
+    _stopFestivalCycling(); // Stop festival cycling timer
+    _stopRelativeDateCycling(); // Stop relative date cycling timer
     super.dispose();
   }
 
@@ -145,6 +164,145 @@ class _CalendarViewState extends State<CalendarView>
     });
   }
 
+  /// Get all festivals and events for a given day in the correct order
+  List<String> _getAllFestivalsForDay(DateTime day) {
+    final normalized = _normalizeToLocalDate(day);
+    final lunarDate = Lunar.fromDate(normalized);
+    final solarDate = Solar.fromDate(normalized);
+    final festivals = <String>[];
+
+    // Follow the same priority order as _getLunarText()
+    // 1. Lunar festivals
+    final lunarFestivals = lunarDate.getFestivals();
+    if (lunarFestivals.isNotEmpty) {
+      festivals.addAll(lunarFestivals);
+    }
+
+    // 2. Jie Qi (solar terms)
+    final jieQi = lunarDate.getJieQi();
+    if (jieQi.isNotEmpty) {
+      festivals.add(jieQi);
+    }
+
+    // 3. Solar festivals
+    final solarFestivals = solarDate.getFestivals();
+    if (solarFestivals.isNotEmpty) {
+      festivals.addAll(solarFestivals);
+    }
+
+    // 4. Solar other festivals
+    final solarOtherFestivals = solarDate.getOtherFestivals();
+    if (solarFestivals.isNotEmpty) {
+      festivals.addAll(solarOtherFestivals);
+    }
+
+    return festivals;
+  }
+
+  /// Start festival cycling for the given day
+  void _startFestivalCycling(DateTime day) {
+    _stopFestivalCycling(); // Stop any existing timer
+
+    _currentFestivals = _getAllFestivalsForDay(day);
+    _currentFestivalIndex = 0;
+
+    // Only start cycling if there are multiple festivals
+    if (_currentFestivals.length > 1) {
+      _festivalCycleTimer = Timer.periodic(
+        Duration(seconds: cyclingDuration),
+        (timer) {
+          setState(() {
+            _currentFestivalIndex =
+                (_currentFestivalIndex + 1) % _currentFestivals.length;
+          });
+        },
+      );
+    }
+  }
+
+  /// Stop festival cycling
+  void _stopFestivalCycling() {
+    _festivalCycleTimer?.cancel();
+    _festivalCycleTimer = null;
+  }
+
+  /// Start relative date cycling for the given day
+  void _startRelativeDateCycling(DateTime day) {
+    _stopRelativeDateCycling(); // Stop any existing timer
+
+    _currentRelativeDates = _getAllRelativeDatesForDay(day);
+    _currentRelativeDateIndex = 0;
+
+    // Only start cycling if there are multiple relative date formats
+    if (_currentRelativeDates.length > 1) {
+      _relativeDateCycleTimer = Timer.periodic(
+        Duration(seconds: cyclingDuration),
+        (timer) {
+          setState(() {
+            _currentRelativeDateIndex =
+                (_currentRelativeDateIndex + 1) % _currentRelativeDates.length;
+          });
+        },
+      );
+    }
+  }
+
+  /// Stop relative date cycling
+  void _stopRelativeDateCycling() {
+    _relativeDateCycleTimer?.cancel();
+    _relativeDateCycleTimer = null;
+  }
+
+  /// Get the current festival text to display
+  String _getCurrentFestivalText() {
+    if (_currentFestivals.isEmpty) return '';
+    return _currentFestivals[_currentFestivalIndex];
+  }
+
+  /// Get all relative date strings for a given day
+  List<String> _getAllRelativeDatesForDay(DateTime day) {
+    final today = DateTime.now();
+    final normalizedToday = DateTime(today.year, today.month, today.day);
+    final normalizedSelected = DateTime(day.year, day.month, day.day);
+    final difference = normalizedSelected.difference(normalizedToday).inDays;
+
+    final humanized = DateHumanized.humanize(day);
+    final relative = _getOriginalRelativeDateText(day);
+
+    if (difference.abs() < 30) {
+      return [humanized];
+    }
+
+    return [humanized, relative];
+  }
+
+  /// Get the current relative date text to display
+  String _getCurrentRelativeDateText() {
+    if (_currentRelativeDates.isEmpty) return '';
+    return _currentRelativeDates[_currentRelativeDateIndex];
+  }
+
+  /// Calculate original relative date text (e.g., "3天前", "2天后")
+  String _getOriginalRelativeDateText(DateTime selectedDate) {
+    final today = DateTime.now();
+    final normalizedToday = DateTime(today.year, today.month, today.day);
+    final normalizedSelected = DateTime(
+      selectedDate.year,
+      selectedDate.month,
+      selectedDate.day,
+    );
+
+    final difference = normalizedSelected.difference(normalizedToday).inDays;
+
+    if (difference == 0) {
+      return '今天';
+    } else if (difference > 0) {
+      return '$difference天 后';
+    } else {
+      return '${-difference}天 前';
+    }
+  }
+
   /// Show unified year-month picker dialog
   Future<void> _showYearMonthPicker() async {
     final selectedDate = await showYearMonthPicker(
@@ -159,6 +317,9 @@ class _CalendarViewState extends State<CalendarView>
         _focusedDay = selectedDate;
         _selectedDay = _getDefaultSelectedDay(selectedDate);
       });
+      // Restart cycling for the new selected date
+      _startFestivalCycling(_selectedDay ?? selectedDate);
+      _startRelativeDateCycling(_selectedDay ?? selectedDate);
     }
   }
 
@@ -695,6 +856,10 @@ class _CalendarViewState extends State<CalendarView>
     final zodiacIconPath = lunarTitleParts['iconPath'] ?? '';
     final lunarDateStr = lunarTitleParts['date'] ?? '';
 
+    // Get festival and relative date text
+    final festivalText = _getCurrentFestivalText();
+    final relativeDateText = _getCurrentRelativeDateText();
+
     return MediaQuery.removePadding(
       context: context,
       removeTop: true,
@@ -710,11 +875,31 @@ class _CalendarViewState extends State<CalendarView>
                   height: 24,
                 ),
               const SizedBox(width: 8),
-              Text(
-                lunarDateStr,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
+              // Inline title with festival text and relative date
+              RichText(
+                text: TextSpan(
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  children: [
+                    // Main title with lunar date and festival text
+                    TextSpan(
+                      text: lunarDateStr,
+                    ),
+                    TextSpan(
+                      text: festivalText.isNotEmpty ? '  $festivalText' : '',
+                    ),
+                    // Inline relative date text
+                    if (relativeDateText != '今天')
+                      TextSpan(
+                        text: '  $relativeDateText',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.normal,
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ],
@@ -724,10 +909,14 @@ class _CalendarViewState extends State<CalendarView>
             IconButton(
               icon: const TodayIcon(),
               onPressed: () {
+                final now = DateTime.now();
                 setState(() {
-                  _focusedDay = DateTime.now();
+                  _focusedDay = now;
                   _selectedDay = null;
                 });
+                // Restart cycling for today
+                _startFestivalCycling(now);
+                _startRelativeDateCycling(now);
               },
               tooltip: l10n.today,
             ),
@@ -952,12 +1141,20 @@ class _CalendarViewState extends State<CalendarView>
                         _selectedDay = selectedDay;
                         _focusedDay = focusedDay;
                       });
+                      // Restart festival cycling for the new selected day
+                      _startFestivalCycling(selectedDay);
+                      // Restart relative date cycling for the new selected day
+                      _startRelativeDateCycling(selectedDay);
                     },
                     onPageChanged: (focusedDay) {
                       setState(() {
                         _focusedDay = focusedDay;
                         _selectedDay = _getDefaultSelectedDay(focusedDay);
                       });
+                      // Restart festival cycling for the new page
+                      _startFestivalCycling(_selectedDay ?? focusedDay);
+                      // Restart relative date cycling for the new page
+                      _startRelativeDateCycling(_selectedDay ?? focusedDay);
                     },
                   );
                 },
