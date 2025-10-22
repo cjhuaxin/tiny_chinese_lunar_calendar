@@ -13,6 +13,7 @@ dependencies:
   flutter_bloc: ^9.1.1
   flutter_localizations:
     sdk: flutter
+  flutter_svg: ^2.0.10
   http: ^1.1.0
   intl: ^0.20.2
   lunar: ^1.7.5
@@ -32,3 +33,4 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
+    - assets/zodiac/

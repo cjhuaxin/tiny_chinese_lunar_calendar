@@ -8,6 +8,7 @@ import 'package:tiny_chinese_lunar_calendar/app/theme/app_theme.dart';
 import 'package:tiny_chinese_lunar_calendar/calendar/utils/holiday_helper.dart';
 import 'package:tiny_chinese_lunar_calendar/calendar/widgets/holiday_tag.dart';
 import 'package:tiny_chinese_lunar_calendar/calendar/widgets/today_icon.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:tiny_chinese_lunar_calendar/calendar/widgets/year_month_picker_dialog.dart';
 import 'package:tiny_chinese_lunar_calendar/l10n/l10n.dart';
 
@@ -154,13 +155,28 @@ class _CalendarViewState extends State<CalendarView>
     );
 
     if (selectedDate != null) {
-      // After closing the picker, automatically select the first day of the
-      // chosen month to improve UX.
       setState(() {
         _focusedDay = selectedDate;
-        _selectedDay = DateTime(selectedDate.year, selectedDate.month);
+        _selectedDay = _getDefaultSelectedDay(selectedDate);
       });
     }
+  }
+
+  /// Get the default selected day for a given month
+  /// Returns today if it's in the given month, otherwise returns the first
+  /// day of the month
+  DateTime _getDefaultSelectedDay(DateTime monthDate) {
+    final today = DateTime.now();
+    final normalizedToday = DateTime(today.year, today.month, today.day);
+
+    // Check if today is in the same month and year as the given date
+    if (normalizedToday.year == monthDate.year &&
+        normalizedToday.month == monthDate.month) {
+      return normalizedToday;
+    }
+
+    // Otherwise, return the first day of the month
+    return DateTime(monthDate.year, monthDate.month);
   }
 
   /// 构建非当月日期单元格，同时显示公历和农历日期
@@ -631,35 +647,41 @@ class _CalendarViewState extends State<CalendarView>
     return DateTime(local.year, local.month, local.day);
   }
 
-  /// Get the zodiac animal emoji for the given lunar date
-  String _getZodiacIcon(String shengXiao) {
+  /// Get the zodiac animal asset path for the given lunar date
+  String _getZodiacIconPath(String shengXiao) {
     const zodiacIcons = {
-      '鼠': '🐭', // Rat
-      '牛': '🐮', // Ox
-      '虎': '🐯', // Tiger
-      '兔': '🐰', // Rabbit
-      '龙': '🐲', // Dragon
-      '蛇': '🐍', // Snake
-      '马': '🐴', // Horse
-      '羊': '🐑', // Goat/Sheep
-      '猴': '🐵', // Monkey
-      '鸡': '🐔', // Rooster
-      '狗': '🐶', // Dog
-      '猪': '🐷', // Pig
+      '鼠': 'assets/zodiac/rat.svg',
+      '牛': 'assets/zodiac/ox.svg',
+      '虎': 'assets/zodiac/tiger.svg',
+      '兔': 'assets/zodiac/rabbit.svg',
+      '龙': 'assets/zodiac/dragon.svg',
+      '蛇': 'assets/zodiac/snake.svg',
+      '马': 'assets/zodiac/horse.svg',
+      '羊': 'assets/zodiac/sheep.svg',
+      '猴': 'assets/zodiac/monkey.svg',
+      '鸡': 'assets/zodiac/rooster.svg',
+      '狗': 'assets/zodiac/dog.svg',
+      '猪': 'assets/zodiac/pig.svg',
     };
     return zodiacIcons[shengXiao] ?? '';
   }
 
   /// Get the lunar date text with zodiac icon for the title bar
+  /// The zodiac is based on the focused year, while the date is based on
+  /// the selected/focused day
   Map<String, String> _getLunarDateTitleParts(DateTime date) {
     final normalized = _normalizeToLocalDate(date);
     final lunarDate = Lunar.fromDate(normalized);
-    final shengXiao = lunarDate.getYearShengXiao();
-    final zodiacIcon = _getZodiacIcon(shengXiao);
+
+    // Get zodiac based on the focused year (not the selected day's year)
+    final focusedYearLunar = Lunar.fromDate(_focusedDay);
+    final shengXiao = focusedYearLunar.getYearShengXiao();
+    final zodiacIconPath = _getZodiacIconPath(shengXiao);
+
     final dateStr =
         '${lunarDate.getMonthInChinese()}月${lunarDate.getDayInChinese()}';
 
-    return {'icon': zodiacIcon, 'date': dateStr};
+    return {'iconPath': zodiacIconPath, 'date': dateStr};
   }
 
   @override
@@ -670,7 +692,7 @@ class _CalendarViewState extends State<CalendarView>
     // otherwise focused day
     final titleDate = _selectedDay ?? _focusedDay;
     final lunarTitleParts = _getLunarDateTitleParts(titleDate);
-    final zodiacIcon = lunarTitleParts['icon'] ?? '';
+    final zodiacIconPath = lunarTitleParts['iconPath'] ?? '';
     final lunarDateStr = lunarTitleParts['date'] ?? '';
 
     return MediaQuery.removePadding(
@@ -681,12 +703,12 @@ class _CalendarViewState extends State<CalendarView>
           title: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                zodiacIcon,
-                style: const TextStyle(
-                  fontSize: 24, // Larger size for the emoji
+              if (zodiacIconPath.isNotEmpty)
+                SvgPicture.asset(
+                  zodiacIconPath,
+                  width: 24,
+                  height: 24,
                 ),
-              ),
               const SizedBox(width: 8),
               Text(
                 lunarDateStr,
@@ -934,6 +956,7 @@ class _CalendarViewState extends State<CalendarView>
                     onPageChanged: (focusedDay) {
                       setState(() {
                         _focusedDay = focusedDay;
+                        _selectedDay = _getDefaultSelectedDay(focusedDay);
                       });
                     },
                   );
