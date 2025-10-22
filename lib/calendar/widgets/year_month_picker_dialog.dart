@@ -173,10 +173,11 @@ class _YearMonthPickerDialogState extends State<YearMonthPickerDialog> {
       height: 120, // 1/3 of total dialog content area (300 * 1/3)
       padding: const EdgeInsets.all(16),
       child: GridView.builder(
+        physics: const NeverScrollableScrollPhysics(), // Disable scrolling
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 4, // 4 columns, 3 rows
-          childAspectRatio: 2.2,
-          crossAxisSpacing: 8,
+          crossAxisCount: 6, // 6 columns for 2 rows layout
+          childAspectRatio: 1.8, // Reduced aspect ratio for more compact items
+          crossAxisSpacing: 6, // Reduced spacing for better fit
           mainAxisSpacing: 8,
         ),
         itemCount: 12,
@@ -188,9 +189,11 @@ class _YearMonthPickerDialogState extends State<YearMonthPickerDialog> {
             color: isSelected
                 ? Theme.of(context).primaryColor.withValues(alpha: 0.1)
                 : Colors.grey.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(
+              6,
+            ), // Slightly smaller border radius
             child: InkWell(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(6),
               onTap: () {
                 // Auto-confirm when month is selected
                 final selectedDate = DateTime(_selectedYear, month);
@@ -198,7 +201,7 @@ class _YearMonthPickerDialogState extends State<YearMonthPickerDialog> {
               },
               child: Container(
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(6),
                   border: isSelected
                       ? Border.all(
                           color: Theme.of(context).primaryColor,
@@ -210,7 +213,8 @@ class _YearMonthPickerDialogState extends State<YearMonthPickerDialog> {
                   child: Text(
                     months[index],
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize:
+                          10, // Reduced font size for more compact display
                       fontWeight: isSelected
                           ? FontWeight.bold
                           : FontWeight.normal,
@@ -219,6 +223,9 @@ class _YearMonthPickerDialogState extends State<YearMonthPickerDialog> {
                           : Theme.of(context).textTheme.bodyLarge?.color,
                     ),
                     textAlign: TextAlign.center,
+                    maxLines: 1, // Ensure single line display
+                    overflow:
+                        TextOverflow.ellipsis, // Handle overflow gracefully
                   ),
                 ),
               ),
