@@ -92,6 +92,9 @@ class _CalendarViewState extends State<CalendarView>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.resumed) {
+      // Only check for date change - refresh will happen automatically
+      // if a date change is detected. No need for additional refresh
+      // when no date change occurred.
       _checkForDateChange();
     }
   }
@@ -123,7 +126,19 @@ class _CalendarViewState extends State<CalendarView>
           _focusedDay = currentDate;
         }
       });
+
+      // Refresh relative date calculations when system date changes
+      _refreshRelativeDates();
     }
+  }
+
+  /// Refresh relative date calculations for the currently selected day
+  void _refreshRelativeDates() {
+    final targetDay = _selectedDay ?? _focusedDay;
+    // Restart relative date cycling with updated calculations
+    _startRelativeDateCycling(targetDay);
+    // Also refresh festival cycling in case festivals are date-dependent
+    _startFestivalCycling(targetDay);
   }
 
   void _loadSettings() {
