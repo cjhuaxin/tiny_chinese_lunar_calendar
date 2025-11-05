@@ -12,11 +12,16 @@ class ChineseHolidayService {
   /// Private constructor for singleton
   ChineseHolidayService._internal();
 
-  static const String _apiUrl =
-      'https://cdn.jsdelivr.net/npm/chinese-days/dist/chinese-days.json';
+  /// Multiple API sources for redundancy
+  static const List<String> _apiUrls = [
+    'https://cdn.jsdelivr.net/npm/chinese-days/dist/chinese-days.json',
+    'https://unpkg.com/chinese-days/dist/chinese-days.json',
+  ];
+
   static const String _cacheKey = 'chinese_holiday_data';
   static const String _etagKey = 'chinese_holiday_etag';
   static const String _lastUpdateKey = 'chinese_holiday_last_update';
+  static const String _lastSuccessfulUrlKey = 'chinese_holiday_last_url';
 
   /// Duration after which to check for updates (24 hours)
   static const Duration _updateCheckInterval = Duration(hours: 24);
@@ -69,35 +74,55 @@ class ChineseHolidayService {
   }
 
   /// Fetch data from API and cache it
+  /// Tries multiple API sources for redundancy
   Future<Map<String, dynamic>?> _fetchFromApi() async {
-    try {
-      final response = await http
-          .get(
-            Uri.parse(_apiUrl),
-            headers: {'Accept': 'application/json'},
-          )
-          .timeout(const Duration(seconds: 10));
+    final prefs = await SharedPreferences.getInstance();
+    final lastSuccessfulUrl = prefs.getString(_lastSuccessfulUrlKey);
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body) as Map<String, dynamic>;
-
-        // Validate data structure
-        if (data.containsKey('holidays') && data.containsKey('workdays')) {
-          await _cacheData(data, response.headers['etag']);
-          _cachedData = data;
-          return data;
-        } else {
-          log('Invalid data structure from API');
-          return null;
-        }
-      } else {
-        log('API request failed with status: ${response.statusCode}');
-        return null;
-      }
-    } on Exception catch (e) {
-      log('Error fetching from API: $e');
-      return null;
+    // Try last successful URL first if available
+    final urlsToTry = <String>[];
+    if (lastSuccessfulUrl != null && _apiUrls.contains(lastSuccessfulUrl)) {
+      urlsToTry
+        ..add(lastSuccessfulUrl)
+        ..addAll(_apiUrls.where((url) => url != lastSuccessfulUrl));
+    } else {
+      urlsToTry.addAll(_apiUrls);
     }
+
+    // Try each URL until one succeeds
+    for (final apiUrl in urlsToTry) {
+      try {
+        log('Attempting to fetch from: $apiUrl');
+        final response = await http
+            .get(
+              Uri.parse(apiUrl),
+              headers: {'Accept': 'application/json'},
+            )
+            .timeout(const Duration(seconds: 10));
+
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body) as Map<String, dynamic>;
+
+          // Validate data structure
+          if (data.containsKey('holidays') && data.containsKey('workdays')) {
+            await _cacheData(data, response.headers['etag'], apiUrl);
+            _cachedData = data;
+            log('Successfully fetched data from: $apiUrl');
+            return data;
+          } else {
+            log('Invalid data structure from API: $apiUrl');
+          }
+        } else {
+          log('API request failed with status ${response.statusCode}: $apiUrl');
+        }
+      } on Exception catch (e) {
+        log('Error fetching from $apiUrl: $e');
+        // Continue to next URL
+      }
+    }
+
+    log('All API sources failed');
+    return null;
   }
 
   /// Check for updates using ETag mechanism
@@ -105,11 +130,15 @@ class ChineseHolidayService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final cachedEtag = prefs.getString(_etagKey);
+      final lastSuccessfulUrl = prefs.getString(_lastSuccessfulUrlKey);
+
+      // Use last successful URL or first URL
+      final urlToCheck = lastSuccessfulUrl ?? _apiUrls.first;
 
       // Use HEAD request to check ETag without downloading full content
       final response = await http
           .head(
-            Uri.parse(_apiUrl),
+            Uri.parse(urlToCheck),
           )
           .timeout(const Duration(seconds: 5));
 
@@ -129,11 +158,16 @@ class ChineseHolidayService {
   }
 
   /// Cache data locally
-  Future<void> _cacheData(Map<String, dynamic> data, String? etag) async {
+  Future<void> _cacheData(
+    Map<String, dynamic> data,
+    String? etag,
+    String successfulUrl,
+  ) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_cacheKey, jsonEncode(data));
       await prefs.setString(_lastUpdateKey, DateTime.now().toIso8601String());
+      await prefs.setString(_lastSuccessfulUrlKey, successfulUrl);
 
       if (etag != null) {
         await prefs.setString(_etagKey, etag);

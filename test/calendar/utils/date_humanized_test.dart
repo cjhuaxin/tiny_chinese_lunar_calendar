@@ -99,7 +99,7 @@ void main() {
     test('should handle edge cases around month boundaries', () {
       // Test end of month to beginning of next month
       final endOfMonth = DateTime(2024, 1, 31);
-      final beginningOfNextMonth = DateTime(2024, 2, 1);
+      final beginningOfNextMonth = DateTime(2024, 2);
 
       final result1 = DateHumanized.humanize(
         endOfMonth,

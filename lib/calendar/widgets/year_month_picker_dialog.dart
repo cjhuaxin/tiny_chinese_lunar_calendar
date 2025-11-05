@@ -161,12 +161,10 @@ class _YearMonthPickerDialogState extends State<YearMonthPickerDialog> {
   }
 
   Widget _buildMonthPicker() {
-    final locale = Localizations.localeOf(context);
-
-    // Generate month names using DateFormat for proper localization
+    // Always use Chinese locale for month names
     final months = List.generate(12, (index) {
       final date = DateTime(2024, index + 1);
-      return DateFormat.MMMM(locale.toString()).format(date);
+      return DateFormat.MMMM('zh').format(date);
     });
 
     return Container(

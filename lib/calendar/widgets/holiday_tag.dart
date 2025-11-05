@@ -5,8 +5,7 @@ import 'package:flutter/material.dart';
 /// 班 (bān) - Work day (red background)
 class HolidayTag extends StatelessWidget {
   const HolidayTag({
-    super.key,
-    required this.isWorkDay,
+    required this.isWorkDay, super.key,
     this.size = 16.0,
   });
 
@@ -45,7 +44,7 @@ class HolidayTag extends StatelessWidget {
             color: Colors.white,
             fontSize: size * 0.6, // Font size relative to tag size
             fontWeight: FontWeight.bold,
-            height: 1.0,
+            height: 1,
           ),
         ),
       ),

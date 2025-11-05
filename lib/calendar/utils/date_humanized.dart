@@ -55,25 +55,25 @@ class DateHumanized {
       if (totalDays == 0) {
         return '今天';
       }
-      return '${totalDays}天' + appendSuffix(isInPast);
+      return '${totalDays}天${appendSuffix(isInPast)}';
     }
 
     // More than one year
     if (years > 0) {
       if (months == 0 && days == 0) {
-        return '${years}年' + appendSuffix(isInPast);
+        return '${years}年${appendSuffix(isInPast)}';
       } else if (days == 0) {
-        return '${years}年${months}月' + appendSuffix(isInPast);
+        return '${years}年${months}月${appendSuffix(isInPast)}';
       } else {
-        return '${years}年${months}月${days}天' + appendSuffix(isInPast);
+        return '${years}年${months}月${days}天${appendSuffix(isInPast)}';
       }
     }
 
     // More than one month but less than one year
     if (days == 0) {
-      return '${months}月' + appendSuffix(isInPast);
+      return '${months}月${appendSuffix(isInPast)}';
     } else {
-      return '${months}月${days}天' + appendSuffix(isInPast);
+      return '${months}月${days}天${appendSuffix(isInPast)}';
     }
   }
 

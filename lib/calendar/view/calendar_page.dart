@@ -1,17 +1,18 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import 'package:lunar/lunar.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:tiny_chinese_lunar_calendar/app/theme/app_theme.dart';
+import 'package:tiny_chinese_lunar_calendar/calendar/utils/date_humanized.dart';
 import 'package:tiny_chinese_lunar_calendar/calendar/utils/holiday_helper.dart';
 import 'package:tiny_chinese_lunar_calendar/calendar/widgets/holiday_tag.dart';
 import 'package:tiny_chinese_lunar_calendar/calendar/widgets/today_icon.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:tiny_chinese_lunar_calendar/calendar/widgets/year_month_picker_dialog.dart';
 import 'package:tiny_chinese_lunar_calendar/l10n/l10n.dart';
-import 'package:tiny_chinese_lunar_calendar/calendar/utils/date_humanized.dart';
 
 class CalendarPage extends StatelessWidget {
   const CalendarPage({super.key, this.onLanguageChanged});
@@ -1014,7 +1015,7 @@ class _CalendarViewState extends State<CalendarView>
                     lastDay: kLastDay,
                     daysOfWeekHeight: daysOfWeekHeight,
                     rowHeight: rowHeight,
-                    locale: Localizations.localeOf(context).toString(),
+                    locale: 'zh', // Always use Chinese locale for calendar
                     headerStyle: const HeaderStyle(
                       formatButtonVisible: false,
                       titleCentered: true,
@@ -1055,11 +1056,9 @@ class _CalendarViewState extends State<CalendarView>
                         : StartingDayOfWeek.monday,
                     calendarBuilders: CalendarBuilders(
                       headerTitleBuilder: (context, day) {
-                        final locale = Localizations.localeOf(context);
-                        final yearFormatter = DateFormat.y(locale.toString());
-                        final monthFormatter = DateFormat.MMMM(
-                          locale.toString(),
-                        );
+                        // Always use Chinese locale for month and year display
+                        final yearFormatter = DateFormat.y('zh');
+                        final monthFormatter = DateFormat.MMMM('zh');
 
                         return Container(
                           padding: EdgeInsets.all(headerPadding),
