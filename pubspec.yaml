@@ -1,6 +1,6 @@
 name: tiny_chinese_lunar_calendar
 description: A Tiny Chinese Lunar Calendar app.
-version: 1.0.0+1
+version: 0.0.1+2
 publish_to: none
 
 environment:
@@ -23,6 +23,7 @@ dependencies:
 
 dev_dependencies:
   bloc_test: ^10.0.0
+  flutter_launcher_icons: ^0.14.1
   flutter_test:
     sdk: flutter
   mocktail: ^1.0.4
@@ -34,3 +35,16 @@ flutter:
   assets:
     - assets/images/
     - assets/zodiac/
+
+flutter_launcher_icons:
+  android:
+    generate: true
+  ios:
+    generate: true
+  macos:
+    generate: true
+  windows:
+    generate: true
+  web:
+    generate: true
+  image_path: "assets/icon/app_icon.png"

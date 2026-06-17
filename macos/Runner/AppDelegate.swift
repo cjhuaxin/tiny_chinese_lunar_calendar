@@ -13,9 +13,13 @@ import FlutterMacOS
   var settingsEventMonitor: Any?
   var dateChangeObserver: NSObjectProtocol?
   var wakeObserver: NSObjectProtocol?
+  var midnightTimer: Timer?
+  var lastKnownDateComponents: DateComponents?
 
   deinit {
     removeObservers()
+    midnightTimer?.invalidate()
+    midnightTimer = nil
   }
 
   override func applicationWillFinishLaunching(_ notification: Notification) {
@@ -214,6 +218,11 @@ import FlutterMacOS
   }
 
   func setupDateChangeObservers() {
+    // Initialize last known date
+    let calendar = Calendar.current
+    let now = Date()
+    lastKnownDateComponents = calendar.dateComponents([.year, .month, .day], from: now)
+
     // Observer for system clock changes (including date changes)
     dateChangeObserver = NotificationCenter.default.addObserver(
       forName: .NSSystemClockDidChange,
@@ -221,20 +230,85 @@ import FlutterMacOS
       queue: .main
     ) { [weak self] _ in
       NSLog("System clock changed - updating tray icon")
-      self?.updateTrayIcon()
+      self?.checkAndUpdateTrayIcon()
+      // Reschedule midnight timer as system time may have changed
+      self?.scheduleMidnightUpdate()
     }
 
     // Observer for system wake from sleep
-    wakeObserver = NotificationCenter.default.addObserver(
+    wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
       forName: NSWorkspace.didWakeNotification,
       object: nil,
       queue: .main
     ) { [weak self] _ in
-      NSLog("System woke from sleep - updating tray icon")
-      self?.updateTrayIcon()
+      NSLog("System woke from sleep - scheduling tray icon update")
+      // Add a small delay to ensure system date is fully updated after wake
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+        self?.checkAndUpdateTrayIcon()
+        // Reschedule midnight timer as we may have slept through midnight
+        self?.scheduleMidnightUpdate()
+      }
     }
 
+    // Schedule the first midnight update
+    scheduleMidnightUpdate()
+
     NSLog("Date change observers setup completed")
+  }
+
+  /// Schedule a timer to fire at the next midnight
+  func scheduleMidnightUpdate() {
+    // Invalidate any existing timer
+    midnightTimer?.invalidate()
+    midnightTimer = nil
+
+    let calendar = Calendar.current
+    let now = Date()
+
+    // Calculate the next midnight
+    guard let tomorrow = calendar.date(byAdding: .day, value: 1, to: now),
+          let nextMidnight = calendar.date(bySettingHour: 0, minute: 0, second: 0, of: tomorrow)
+    else {
+      NSLog("Failed to calculate next midnight")
+      return
+    }
+
+    let timeInterval = nextMidnight.timeIntervalSince(now)
+    NSLog("Scheduling midnight update in \(timeInterval) seconds")
+
+    // Create a timer that fires at midnight
+    midnightTimer = Timer.scheduledTimer(withTimeInterval: timeInterval, repeats: false) { [weak self] _ in
+      NSLog("Midnight timer fired - updating tray icon")
+      self?.checkAndUpdateTrayIcon()
+      // Schedule the next midnight update
+      self?.scheduleMidnightUpdate()
+    }
+
+    // Ensure timer fires even when app is in background
+    if let timer = midnightTimer {
+      RunLoop.main.add(timer, forMode: .common)
+    }
+  }
+
+  /// Check if date has changed and update tray icon if needed
+  func checkAndUpdateTrayIcon() {
+    let calendar = Calendar.current
+    let now = Date()
+    let currentComponents = calendar.dateComponents([.year, .month, .day], from: now)
+
+    // Check if date has actually changed
+    if let lastComponents = lastKnownDateComponents,
+       lastComponents.year == currentComponents.year,
+       lastComponents.month == currentComponents.month,
+       lastComponents.day == currentComponents.day {
+      NSLog("Date has not changed, skipping tray icon update")
+      return
+    }
+
+    // Date has changed, update the icon
+    NSLog("Date changed from \(String(describing: lastKnownDateComponents)) to \(currentComponents)")
+    lastKnownDateComponents = currentComponents
+    updateTrayIcon()
   }
 
   func removeObservers() {
@@ -244,9 +318,12 @@ import FlutterMacOS
     }
 
     if let observer = wakeObserver {
-      NotificationCenter.default.removeObserver(observer)
+      NSWorkspace.shared.notificationCenter.removeObserver(observer)
       wakeObserver = nil
     }
+
+    midnightTimer?.invalidate()
+    midnightTimer = nil
 
     NSLog("Date change observers removed")
   }
@@ -540,15 +617,25 @@ import FlutterMacOS
   @objc func showAbout() {
     NSLog("About menu item clicked")
 
+    // Get version info from bundle (set by Flutter build system via Info.plist)
+    let bundle = Bundle.main
+    let version = bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.0"
+    let buildNumber = bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
+
     // Use the system's standard about panel for consistency
     let options: [NSApplication.AboutPanelOptionKey: Any] = [
       .applicationName: "Tiny Chinese Lunar Calendar",
-      .applicationVersion: "1.0",
-      .version: "Build 1.0.0",
+      .applicationVersion: version,
+      .version: "Build \(buildNumber)",
       NSApplication.AboutPanelOptionKey(rawValue: "Copyright"):
-        "© 2024 Tiny Chinese Lunar Calendar",
-      .credits: NSAttributedString(
-        string: "A compact lunar calendar application for macOS.\n\nBuilt with Flutter and Swift."),
+        "© 2026 Tiny Chinese Lunar Calendar",
+      .credits: {
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.alignment = .center
+        return NSAttributedString(
+          string: "A compact lunar calendar application for macOS.\n\nBuilt with Flutter and Swift.\n\nAuthor: cjhuaxin",
+          attributes: [.paragraphStyle: paragraphStyle])
+      }(),
       .applicationIcon: (NSApp.applicationIconImage ?? NSImage(named: "AppIcon")) as Any,
     ]
 
